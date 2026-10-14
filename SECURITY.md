@@ -32,10 +32,18 @@ Only the latest release running on the `main` branch receives security updates.
    - It downloads only the fixed release URL of this repository, never a caller-supplied URL, and checks size and content before uploading.
    - The setup key it generates is returned once in the response and is stored only as a secret on the visitor's own Worker.
 
-5. **Input Sanitization & Output Encoding**:
+5. **In-bot Updates (opt-in)**:
+   - Off unless the owner ticks the box in the wizard. Then the Cloudflare token is stored as a Worker **secret** (`CF_API_TOKEN`), never in D1, and it is never shown back.
+   - That token can modify Workers and D1 databases of the accounts selected when it was created. The README and the wizard say so next to the checkbox and recommend a single-account token.
+   - The update button and every `upd_*` action are owner-only, private-chat-only, and re-checked on every tap. A stranger cannot trigger a release lookup or an upload.
+   - The owner claim link is random, valid for 2 hours, single-use, and only its SHA-256 is stored. Whoever opens it first becomes the owner, so the wizard says to open it immediately.
+   - Nothing is installed without a tap on **Update**. The file is fetched only from the fixed GitHub release URL of the configured repository, size-limited, and refused if its embedded fingerprint (`BUILD_ID`) does not match its content. This detects truncation and accidental edits; it does **not** protect against a malicious release published from the repository itself, which is the trust you place in the maintainers.
+   - The upload keeps every binding (`inherit`, strict) and the previous version stays available for rollback.
+
+6. **Input Sanitization & Output Encoding**:
    - All external movie titles, user messages, and API strings undergo strict HTML escaping (`escapeHtml`) prior to inclusion in Telegram message bodies or the web interface, preventing HTML injection and XSS.
 
-6. **Security Headers**:
+7. **Security Headers**:
    - The wizard is served with a strict Content-Security-Policy plus `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 
 ---

@@ -44,6 +44,7 @@ It runs on **Cloudflare Workers** with a **D1** database, so there is no server 
 | 🎨 **Coloured buttons** | Blue, green and red inline buttons (Bot API 9.4+) |
 | 🧙 **Setup wizard** | Checks your tokens, creates the database, registers the webhook |
 | 🔄 **Webhook self-heal** | A cron re-registers the webhook if Telegram loses it |
+| ⬆️ **Updates from Telegram** | The owner presses a button, confirms, and the bot replaces its own file with the latest release (with rollback) |
 
 <img src="assets/divider.svg" alt="" width="100%">
 
@@ -71,7 +72,19 @@ Open your new address. The setup wizard appears **by itself** and stays until se
 2. Enter your **bot token** ([@BotFather](https://t.me/BotFather)) and your **TMDB key** ([get one](https://www.themoviedb.org/settings/api)). Each is checked against the real service.
 3. Press **Install**.
 
-### 3 &nbsp; Use it
+### 3 &nbsp; Become the owner and enable updates (optional)
+
+On the last wizard screen, tick **Updates from inside Telegram** and open the **Become the owner** link once. After that only you see a **🔄 Check for updates** button in the bot's menu (or send `/update`).
+
+- It looks at the latest GitHub release and compares the *content* of its file with yours, so it also notices a file that was **replaced on the same release** without a new tag.
+- It never updates by itself. It shows what it found and waits for your **Update** tap.
+- Your bot token, TMDB key, database, secrets and cron are kept. The previous version stays available and **↩️ Roll back** brings it back.
+- The downloaded file is checked against its own embedded fingerprint first, so a truncated or edited download is refused.
+
+> [!WARNING]
+> To replace its own code the Worker needs your Cloudflare token, so it is stored as a secret on **your** Worker. That token can edit Workers and D1 databases in the accounts you picked when you created it, so pick **only the one account** and revoke it in the Cloudflare dashboard whenever you like. It is stored **only if you tick the box**; without it the bot still works and you update by re-pasting the new `worker.js`. Whoever owns your Telegram account (or your Cloudflare account) can update the bot.
+
+### 4 &nbsp; Use it
 
 Make the bot an admin of your channel (it must be allowed to post), send `/start`, and type a movie name.
 
@@ -113,6 +126,7 @@ Then open `/setup` on your Worker and sign in with that key.
 - **They are stored as plain text** in that database. Anyone with access to your Cloudflare account can read them. See [PRIVACY.md](PRIVACY.md).
 - **The wizard is locked.** Every setup call must prove ownership with a Cloudflare token for the account that runs the Worker, or with the setup key. Wrong or missing proof is refused.
 - **The webhook is verified** with a random secret on every request.
+- **Updates are opt-in and owner-only.** The Cloudflare token is stored only if you tick the box (see the warning above); the update button works only for the Telegram account that claimed ownership, in a private chat, and is re-checked on every tap.
 - **Availability** depends on Cloudflare, Telegram and TMDB. Cloudflare's free plan has daily request limits: see [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
 
 More in [SECURITY.md](SECURITY.md) and [DISCLAIMER.md](DISCLAIMER.md).

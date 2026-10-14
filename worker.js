@@ -7,6 +7,11 @@
 
 import WIZARD_HTML from "./wizard.html";
 
+// Stamped by scripts/build.mjs. Running straight from source keeps the placeholders,
+// which the updater treats as "unknown build, always offer the release".
+const APP_VERSION = "__SOURCE__";
+const BUILD_ID = "__SOURCE_BUILD__";
+
 
 // ─── دیکشنری ترجمه ژانرها به فارسی برای هشتگ‌گذاری ───────────────────────────
 const GENRE_MAP = {
@@ -499,7 +504,7 @@ function buildCaption(titleEn, titleFa, year, mediaType, rating, genresStr, seas
 }
 
 // ─── طراحی رابط کاربری (UI) و پیام‌های ربات ──────────────────────────────────
-function getStartUI(channel) {
+function getStartUI(channel, isOwnerUser = false) {
   const channelBadge = channel ? `🟢 <code>${escapeHtml(channel)}</code>` : "🔴 <i>تنظیم نشده (نیاز به اتصال)</i>";
 
   const text =
@@ -529,6 +534,7 @@ function getStartUI(channel) {
         },
         { text: "📖 راهنمای کاربری", callback_data: "help", style: "danger" },
       ],
+      ...(isOwnerUser ? [[{ text: "🔄 بررسی بروزرسانی", callback_data: "upd_check", style: "success" }]] : []),
     ],
   };
 
@@ -581,10 +587,20 @@ async function handleMessage(env, message) {
   const session = (await getUserSession(env, chatId)) || { state: "IDLE", data: {} };
 
   // دستورات عمومی
+  if (text.startsWith("/start own_")) {
+    return handleOwnerClaim(env, message, text.slice("/start own_".length).trim());
+  }
+
   if (text === "/start") {
     await clearUserSession(env, chatId);
-    const { text: startText, keyboard } = getStartUI(currentChannel);
+    const owner = await isOwner(env, message.from && message.from.id, message.chat.type);
+    const { text: startText, keyboard } = getStartUI(currentChannel, owner);
     return sendMessage(env, chatId, startText, keyboard);
+  }
+
+  if (text === "/update") {
+    if (!(await isOwner(env, message.from && message.from.id, message.chat.type))) return;
+    return showUpdateCheck(env, chatId, null);
   }
 
   if (text === "/help") {
@@ -903,6 +919,20 @@ async function handleCallbackQuery(env, cq) {
     return answerCallbackQuery(env, cq.id);
   }
 
+  if (data.startsWith("upd_")) {
+    if (!(await isOwner(env, cq.from && cq.from.id, cq.message.chat.type))) {
+      return answerCallbackQuery(env, cq.id, "⛔️ این بخش فقط برای مالک ربات است.", true);
+    }
+    await answerCallbackQuery(env, cq.id);
+    if (data === "upd_check") return showUpdateCheck(env, chatId, messageId);
+    if (data === "upd_verify") return verifyUpdate(env, chatId, messageId);
+    if (data === "upd_rollback") return confirmRollback(env, chatId, messageId);
+    if (data === "upd_rollback_go") return performRollback(env, chatId, messageId);
+    const go = data.match(/^upd_go_([0-9a-f]{12})$/);
+    if (go) return performUpdate(env, chatId, messageId, go[1]);
+    return;
+  }
+
   if (data === "cancel") {
     await clearUserSession(env, chatId);
     await answerCallbackQuery(env, cq.id, "عملیات لغو شد.");
@@ -928,7 +958,8 @@ async function handleCallbackQuery(env, cq) {
   if (data === "back_to_start") {
     await answerCallbackQuery(env, cq.id);
     const currentChannel = await getUserChannel(env, chatId);
-    const { text, keyboard } = getStartUI(currentChannel);
+    const owner = await isOwner(env, cq.from && cq.from.id, cq.message.chat.type);
+    const { text, keyboard } = getStartUI(currentChannel, owner);
     return editMessageText(env, chatId, messageId, text, keyboard);
   }
 
@@ -1380,6 +1411,350 @@ async function createAndBindDatabase(auth) {
   return jsonResponse({ ok: true });
 }
 
+// ─── Owner and in-bot updates ─────────────────────────────────────────────────
+// The owner (claimed once through a link from the setup wizard) can check the
+// GitHub release for a newer worker.js from inside Telegram and, after an
+// explicit confirmation, replace this Worker's code. Bindings, secrets, cron and
+// the database are kept; the previous version stays available for rollback.
+const UPDATE_REPO_DEFAULT = "ArizoOwner/Arizo_Movie";
+const REPO_RE = /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/;
+const IS_SOURCE_BUILD = BUILD_ID.startsWith("__");
+const CLAIM_TTL_MS = 2 * 60 * 60 * 1000;
+
+function toHex(bytes) {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function updateRepo(env) {
+  const repo = String(env.UPDATE_REPO || "").trim();
+  return REPO_RE.test(repo) ? repo : UPDATE_REPO_DEFAULT;
+}
+
+async function isOwner(env, userId, chatType) {
+  if (chatType !== "private" || !userId) return false;
+  const admin = await getSetting(env, "ADMIN_ID");
+  return !!admin && String(admin) === String(userId);
+}
+
+async function handleOwnerClaim(env, message, code) {
+  const chatId = message.chat.id;
+  if (message.chat.type !== "private" || !message.from) return;
+  const hash = await getSetting(env, "OWNER_CLAIM_HASH");
+  const exp = Number(await getSetting(env, "OWNER_CLAIM_EXP")) || 0;
+  const given = toHex(await sha256(code));
+  if (!hash || Date.now() > exp || !(await safeEqual(given, hash))) {
+    return sendMessage(
+      env,
+      chatId,
+      "⛔️ <b>لینک مالکیت نامعتبر یا منقضی است.</b>\n\nویزارد راه‌اندازی را دوباره اجرا کنید تا لینک تازه بگیرید."
+    );
+  }
+  await setSetting(env, "ADMIN_ID", String(message.from.id));
+  await setSetting(env, "OWNER_CLAIM_HASH", "");
+  await setSetting(env, "OWNER_CLAIM_EXP", "0");
+  const { text, keyboard } = getStartUI(await getUserChannel(env, chatId), true);
+  await sendMessage(env, chatId, "👑 <b>شما مالک این ربات شدید.</b>\nاز این پس دکمهٔ «بررسی بروزرسانی» در منوی اصلی برای شما نمایش داده می‌شود.");
+  return sendMessage(env, chatId, text, keyboard);
+}
+
+// ── release lookup ────────────────────────────────────────────────────────────
+function parseBuildInfo(text) {
+  const id = (text.match(/const BUILD_ID = "([0-9a-f]{12})";/) || [])[1] || null;
+  const version = (text.match(/const APP_VERSION = "([0-9A-Za-z.+-]{1,32})";/) || [])[1] || null;
+  return { id, version };
+}
+
+// The build id is the first 12 hex chars of the SHA-256 of the file with the id
+// zeroed. Recomputing it detects a truncated or altered download.
+async function releaseIntegrityOk(text, id) {
+  const zeros = "0".repeat(12);
+  const probe = text.replace(`const BUILD_ID = "${id}";`, `const BUILD_ID = "${zeros}";`);
+  return toHex(await sha256(probe)).slice(0, 12) === id;
+}
+
+async function fetchLatestRelease(env) {
+  const repo = updateRepo(env);
+  const base = `https://github.com/${repo}/releases/latest`;
+  const headers = { "User-Agent": "Arizo-Movie-Updater", "Cache-Control": "no-cache" };
+
+  let tag = null;
+  try {
+    const head = await fetch(base, { redirect: "manual", headers });
+    const m = (head.headers.get("Location") || "").match(/\/releases\/tag\/([^/?#]+)$/);
+    if (m) tag = decodeURIComponent(m[1]);
+  } catch (e) {
+    /* the tag is only informational */
+  }
+
+  let res;
+  try {
+    res = await fetch(`${base}/download/worker.js`, { redirect: "follow", headers, cf: { cacheTtl: 0 } });
+  } catch (e) {
+    return { error: "unreachable" };
+  }
+  if (!res.ok) return { error: "missing" };
+  if (Number(res.headers.get("Content-Length") || 0) > MAX_RELEASE_BYTES) return { error: "invalid" };
+  const text = await res.text();
+  if (text.length > MAX_RELEASE_BYTES || !text.includes("export default")) return { error: "invalid" };
+  const info = parseBuildInfo(text);
+  if (!info.id || !(await releaseIntegrityOk(text, info.id))) return { error: "invalid" };
+  return {
+    text,
+    tag,
+    version: info.version,
+    buildId: info.id,
+    url: tag ? `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}` : base,
+  };
+}
+
+async function getUpdateConfig(env) {
+  const token = env.CF_API_TOKEN ? String(env.CF_API_TOKEN) : "";
+  const accountId = await getSetting(env, "CF_ACCOUNT_ID");
+  const script = await getSetting(env, "CF_SCRIPT_NAME");
+  if (!token || !ACCOUNT_ID_RE.test(accountId) || !WORKER_NAME_RE.test(script)) return null;
+  return { token, accountId, script };
+}
+
+function describeBuild(version, id) {
+  const short = `<code>${escapeHtml(String(id).slice(0, 7))}</code>`;
+  if (!version) return short;
+  const label = version.startsWith("__") ? "نسخهٔ سورس" : version;
+  return `<code>${escapeHtml(label)}</code> · ${short}`;
+}
+
+function updateErrorText(code) {
+  if (code === "missing") return "فایل ریلیز در GitHub پیدا نشد.";
+  if (code === "invalid") return "فایل ریلیز معتبر نبود (یکپارچگی تأیید نشد) و برای امنیت رد شد.";
+  return "ارتباط با GitHub برقرار نشد.";
+}
+
+function responder(env, chatId, messageId) {
+  return (text, keyboard) =>
+    messageId ? editMessageText(env, chatId, messageId, text, keyboard) : sendMessage(env, chatId, text, keyboard);
+}
+
+const BACK_BUTTON = [{ text: "🔙 بازگشت به منو", callback_data: "back_to_start", style: "primary" }];
+const CHECK_BUTTON = { text: "🔄 بررسی دوباره", callback_data: "upd_check", style: "primary" };
+
+async function showUpdateCheck(env, chatId, messageId) {
+  const show = responder(env, chatId, messageId);
+  const rel = await fetchLatestRelease(env);
+  if (rel.error) {
+    return show(`⚠️ <b>بررسی بروزرسانی ناموفق بود</b>\n\n${updateErrorText(rel.error)}`, {
+      inline_keyboard: [[CHECK_BUTTON], BACK_BUTTON],
+    });
+  }
+
+  const prevVersion = await getSetting(env, "UPDATE_PREV_VERSION");
+  const rollbackRow = UUID_RE.test(prevVersion)
+    ? [[{ text: "↩️ بازگشت به نسخهٔ قبلی", callback_data: "upd_rollback", style: "danger" }]]
+    : [];
+
+  if (!IS_SOURCE_BUILD && rel.buildId === BUILD_ID) {
+    return show(
+      `✅ <b>ربات به‌روز است</b>\n\nنسخهٔ فعلی: ${describeBuild(APP_VERSION, BUILD_ID)}\n📎 <a href="${escapeHtml(rel.url)}">صفحهٔ ریلیز</a>`,
+      { inline_keyboard: [[CHECK_BUTTON], ...rollbackRow, BACK_BUTTON] }
+    );
+  }
+
+  const sameVersion = !IS_SOURCE_BUILD && rel.version === APP_VERSION;
+  const note = sameVersion
+    ? "\nℹ️ شمارهٔ نسخه همان است، ولی فایل همین ریلیز بعد از نصب شما بروزرسانی شده است."
+    : IS_SOURCE_BUILD
+      ? "\nℹ️ این کپی از روی سورس مستقر شده؛ بروزرسانی آن را با فایل رسمی ریلیز جایگزین می‌کند."
+      : "";
+  const text =
+    "🆕 <b>بروزرسانی موجود است</b>\n\n" +
+    `فعلی: ${describeBuild(APP_VERSION, BUILD_ID)}\n` +
+    `جدید: ${describeBuild(rel.version, rel.buildId)}${note}\n` +
+    `📎 <a href="${escapeHtml(rel.url)}">یادداشت‌های انتشار</a>\n\n` +
+    "با تأیید شما فایل ربات از ریلیز رسمی GitHub دانلود و جایگزین می‌شود. تنظیمات، رمزها و دیتابیس دست‌نخورده می‌مانند.";
+
+  const cfg = await getUpdateConfig(env);
+  if (!cfg) {
+    const origin = await getSetting(env, "WORKER_ORIGIN");
+    const setupRow = origin ? [[{ text: "⚙️ باز کردن ویزارد", url: `${origin}/setup`, style: "primary" }]] : [];
+    return show(
+      text +
+        "\n\n🔒 <b>بروزرسانی از داخل ربات فعال نیست.</b>\nبرای فعال کردن، ویزارد را اجرا کنید و گزینهٔ «بروزرسانی از داخل تلگرام» را بزنید؛ یا فایل را خودتان در Cloudflare جایگزین کنید.",
+      { inline_keyboard: [...setupRow, [CHECK_BUTTON], BACK_BUTTON] }
+    );
+  }
+  return show(text, {
+    inline_keyboard: [
+      [{ text: "✅ بروزرسانی کن", callback_data: `upd_go_${rel.buildId}`, style: "success" }],
+      [{ text: "❌ لغو", callback_data: "back_to_start", style: "danger" }],
+      ...rollbackRow,
+    ],
+  });
+}
+
+async function clearUpdateRecord(env) {
+  for (const key of ["UPDATE_PREV_VERSION", "UPDATE_PREV_BUILD", "UPDATE_TARGET_BUILD", "UPDATE_TARGET_VERSION", "UPDATE_CHAT"]) {
+    await setSetting(env, key, "");
+  }
+}
+
+async function performUpdate(env, chatId, messageId, wantId) {
+  const show = responder(env, chatId, messageId);
+  const cfg = await getUpdateConfig(env);
+  if (!cfg) return showUpdateCheck(env, chatId, messageId);
+
+  const rel = await fetchLatestRelease(env);
+  if (rel.error) {
+    return show(`⚠️ <b>بروزرسانی انجام نشد</b>\n\n${updateErrorText(rel.error)}`, { inline_keyboard: [[CHECK_BUTTON], BACK_BUTTON] });
+  }
+  // The owner confirmed one specific build; if the release changed since, ask again.
+  if (rel.buildId !== wantId) return showUpdateCheck(env, chatId, messageId);
+  if (!IS_SOURCE_BUILD && rel.buildId === BUILD_ID) return showUpdateCheck(env, chatId, messageId);
+
+  const base = `/accounts/${cfg.accountId}/workers/scripts/${cfg.script}`;
+  const current = await cfFetch(cfg.token, `${base}/settings`);
+  if (!current.ok) {
+    return show(
+      `⚠️ <b>دسترسی به Cloudflare ناموفق بود</b>\n\n${escapeHtml(cfErrorText(current))}\nشاید توکن منقضی یا باطل شده باشد؛ ویزارد را دوباره اجرا کنید.`,
+      { inline_keyboard: [[CHECK_BUTTON], BACK_BUTTON] }
+    );
+  }
+  const settings = current.data.result || {};
+
+  // Remember the running version so the owner can roll back.
+  let prevVersion = "";
+  const deployments = await cfFetch(cfg.token, `${base}/deployments`);
+  if (deployments.ok) {
+    const live = ((deployments.data.result && deployments.data.result.deployments) || [])[0];
+    const versions = ((live && live.versions) || []).slice().sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
+    prevVersion = (versions[0] && versions[0].version_id) || "";
+  }
+  await setSetting(env, "UPDATE_PREV_VERSION", prevVersion);
+  await setSetting(env, "UPDATE_PREV_BUILD", BUILD_ID);
+  await setSetting(env, "UPDATE_TARGET_BUILD", rel.buildId);
+  await setSetting(env, "UPDATE_TARGET_VERSION", rel.version || "");
+  await setSetting(env, "UPDATE_CHAT", String(chatId));
+
+  const metadata = {
+    main_module: "worker.js",
+    compatibility_date: settings.compatibility_date || "2024-04-01",
+    compatibility_flags: settings.compatibility_flags || [],
+    bindings: (settings.bindings || []).map((b) => ({ name: b.name, type: "inherit" })),
+  };
+  // A plain upload resets these to their defaults (observed on real Cloudflare for
+  // `observability`), so send back whatever the Worker already had.
+  for (const key of ["observability", "placement", "limits", "tags", "tail_consumers", "logpush"]) {
+    if (settings[key] !== undefined && settings[key] !== null) metadata[key] = settings[key];
+  }
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("worker.js", new Blob([rel.text], { type: "application/javascript+module" }), "worker.js");
+  const upload = await cfFetch(cfg.token, `${base}?bindings_inherit=strict`, { method: "PUT", body: form });
+  if (!upload.ok) {
+    await clearUpdateRecord(env);
+    return show(
+      `⚠️ <b>بروزرسانی انجام نشد</b>\n\nCloudflare فایل را نپذیرفت: ${escapeHtml(cfErrorText(upload))}\nنسخهٔ فعلی بدون تغییر ماند.`,
+      { inline_keyboard: [[CHECK_BUTTON], BACK_BUTTON] }
+    );
+  }
+
+  const rows = [[{ text: "🔍 تأیید اجرای نسخهٔ جدید", callback_data: "upd_verify", style: "success" }]];
+  if (UUID_RE.test(prevVersion)) rows.push([{ text: "↩️ بازگشت به نسخهٔ قبلی", callback_data: "upd_rollback", style: "danger" }]);
+  return show(
+    "⬆️ <b>نسخهٔ جدید آپلود شد.</b>\n\nفعال شدنش معمولاً چند ثانیه طول می‌کشد. حدود ۱۰ ثانیه صبر کنید و بعد دکمهٔ «تأیید اجرا» را بزنید.",
+    { inline_keyboard: rows }
+  );
+}
+
+async function verifyUpdate(env, chatId, messageId) {
+  const show = responder(env, chatId, messageId);
+  const target = await getSetting(env, "UPDATE_TARGET_BUILD");
+  const prevVersion = await getSetting(env, "UPDATE_PREV_VERSION");
+  const rollbackRow = UUID_RE.test(prevVersion)
+    ? [[{ text: "↩️ بازگشت به نسخهٔ قبلی", callback_data: "upd_rollback", style: "danger" }]]
+    : [];
+
+  if (!target) {
+    return show(`ℹ️ بروزرسانی در انتظار نیست.\nنسخهٔ در حال اجرا: ${describeBuild(APP_VERSION, BUILD_ID)}`, {
+      inline_keyboard: [[CHECK_BUTTON], ...rollbackRow, BACK_BUTTON],
+    });
+  }
+  if (target === BUILD_ID) {
+    await setSetting(env, "UPDATE_TARGET_BUILD", "");
+    await setSetting(env, "UPDATE_CHAT", "");
+    return show(`✅ <b>نسخهٔ جدید در حال اجراست</b>\n\n${describeBuild(APP_VERSION, BUILD_ID)}`, {
+      inline_keyboard: [...rollbackRow, BACK_BUTTON],
+    });
+  }
+  return show("⏳ هنوز نسخهٔ جدید فعال نشده. چند ثانیه بعد دوباره دکمه را بزنید.", {
+    inline_keyboard: [[{ text: "🔍 تأیید اجرای نسخهٔ جدید", callback_data: "upd_verify", style: "success" }], ...rollbackRow],
+  });
+}
+
+async function confirmRollback(env, chatId, messageId) {
+  const show = responder(env, chatId, messageId);
+  const prevVersion = await getSetting(env, "UPDATE_PREV_VERSION");
+  const prevBuild = await getSetting(env, "UPDATE_PREV_BUILD");
+  if (!UUID_RE.test(prevVersion)) {
+    return show("ℹ️ نسخهٔ قبلی‌ای برای بازگشت ثبت نشده است.", { inline_keyboard: [BACK_BUTTON] });
+  }
+  return show(
+    `↩️ <b>بازگشت به نسخهٔ قبلی؟</b>\n\nنسخهٔ قبلی: ${describeBuild("", prevBuild || "?")}\nتنظیمات و دیتابیس دست‌نخورده می‌مانند.`,
+    {
+      inline_keyboard: [
+        [{ text: "✅ بله، برگرد", callback_data: "upd_rollback_go", style: "danger" }],
+        [{ text: "❌ انصراف", callback_data: "back_to_start", style: "primary" }],
+      ],
+    }
+  );
+}
+
+async function performRollback(env, chatId, messageId) {
+  const show = responder(env, chatId, messageId);
+  const cfg = await getUpdateConfig(env);
+  const prevVersion = await getSetting(env, "UPDATE_PREV_VERSION");
+  if (!cfg || !UUID_RE.test(prevVersion)) {
+    return show("⚠️ بازگشت ممکن نیست (نسخهٔ قبلی یا دسترسی Cloudflare ثبت نشده).", { inline_keyboard: [BACK_BUTTON] });
+  }
+  const res = await cfFetch(cfg.token, `/accounts/${cfg.accountId}/workers/scripts/${cfg.script}/deployments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ strategy: "percentage", versions: [{ version_id: prevVersion, percentage: 100 }] }),
+  });
+  if (!res.ok) {
+    return show(`⚠️ <b>بازگشت انجام نشد</b>\n\n${escapeHtml(cfErrorText(res))}`, { inline_keyboard: [BACK_BUTTON] });
+  }
+  await clearUpdateRecord(env);
+  return show("✅ <b>بازگشت ثبت شد.</b>\nنسخهٔ قبلی طی چند ثانیه فعال می‌شود.", { inline_keyboard: [BACK_BUTTON] });
+}
+
+// Called from cron: once the new code is the one running, tell the owner.
+async function announcePendingUpdate(env) {
+  const target = await getSetting(env, "UPDATE_TARGET_BUILD");
+  const chat = await getSetting(env, "UPDATE_CHAT");
+  if (!target || !chat || target !== BUILD_ID) return;
+  await sendMessage(env, chat, `✅ <b>بروزرسانی کامل شد.</b>\n${describeBuild(APP_VERSION, BUILD_ID)}`);
+  await setSetting(env, "UPDATE_TARGET_BUILD", "");
+  await setSetting(env, "UPDATE_CHAT", "");
+}
+
+async function storeUpdateToken(auth) {
+  const { cfToken, accountId, script } = auth;
+  const base = `/accounts/${accountId}/workers/scripts/${script}/settings`;
+  const current = await cfFetch(cfToken, base);
+  if (!current.ok) {
+    return { error: fail(502, "خواندن تنظیمات Worker ناموفق بود.", `Reading the Worker settings failed. (${cfErrorText(current)})`, "settings_read_failed") };
+  }
+  const keep = ((current.data.result && current.data.result.bindings) || [])
+    .filter((b) => b.name !== "CF_API_TOKEN")
+    .map((b) => ({ name: b.name, type: "inherit" }));
+  const settings = { bindings: [...keep, { name: "CF_API_TOKEN", type: "secret_text", text: cfToken }] };
+  const form = new FormData();
+  form.append("settings", new Blob([JSON.stringify(settings)], { type: "application/json" }));
+  const patched = await cfFetch(cfToken, base, { method: "PATCH", body: form });
+  if (!patched.ok) {
+    return { error: fail(502, `ذخیرهٔ توکن بروزرسانی ناموفق بود. (${cfErrorText(patched)})`, `Storing the update token failed. (${cfErrorText(patched)})`, "update_token_failed") };
+  }
+  return { ok: true };
+}
+
 async function handleSetupApi(request, env, url) {
   const step = url.pathname.slice("/api/setup/".length);
 
@@ -1394,6 +1769,8 @@ async function handleSetupApi(request, env, url) {
       canUseToken: !!host,
       script: host ? host.script : null,
       installer: installerEnabled(env),
+      version: APP_VERSION,
+      build: BUILD_ID,
     });
   }
 
@@ -1489,7 +1866,10 @@ async function handleSetupApi(request, env, url) {
     const saved =
       (await setSetting(env, "BOT_TOKEN", botToken)) &&
       (await setSetting(env, "TMDB_KEY", tmdbKey)) &&
-      (await setSetting(env, "WORKER_ORIGIN", url.origin));
+      (await setSetting(env, "WORKER_ORIGIN", url.origin)) &&
+      (auth.via === "cloudflare"
+        ? (await setSetting(env, "CF_ACCOUNT_ID", auth.accountId)) && (await setSetting(env, "CF_SCRIPT_NAME", auth.script))
+        : true);
     if (!saved) {
       return fail(500, "ذخیرهٔ تنظیمات در D1 ناموفق بود.", "Saving the settings to D1 failed.", "save_failed");
     }
@@ -1501,6 +1881,41 @@ async function handleSetupApi(request, env, url) {
       }
     }
     return jsonResponse({ ok: true });
+  }
+
+  // Optional: lets the owner update from inside Telegram. The token is stored as a
+  // Worker secret (never in D1), so it cannot be read back through the database.
+  if (step === "install/updates") {
+    if (auth.via !== "cloudflare") {
+      return fail(409, "برای فعال کردن بروزرسانی از داخل ربات، با توکن Cloudflare وارد شوید.", "Sign in with a Cloudflare token to enable in-bot updates.", "need_cf_token");
+    }
+    if (!env.DB) {
+      return fail(409, "ابتدا دیتابیس باید وصل شود.", "Bind the database first.", "no_db");
+    }
+    // Which account/script to update. Stored before the token so a failure below
+    // leaves nothing usable behind (no token means no update).
+    const recorded =
+      (await setSetting(env, "CF_ACCOUNT_ID", auth.accountId)) && (await setSetting(env, "CF_SCRIPT_NAME", auth.script));
+    if (!recorded) {
+      return fail(500, "ذخیرهٔ تنظیمات در D1 ناموفق بود.", "Saving the settings to D1 failed.", "save_failed");
+    }
+    const patched = await storeUpdateToken(auth);
+    if (patched.error) return patched.error;
+    return jsonResponse({ ok: true });
+  }
+
+  if (step === "install/owner") {
+    if (!env.DB) return fail(409, "ابتدا مرحلهٔ ذخیره باید انجام شود.", "Run the save step first.", "not_saved");
+    const me = await telegramGetMe(await getSetting(env, "BOT_TOKEN"));
+    if (!me.ok) return fail(502, "تلگرام توکن ذخیره‌شده را نپذیرفت.", "Telegram rejected the stored token.", "bot_rejected");
+    const code = generateRandomToken(16);
+    await setSetting(env, "OWNER_CLAIM_HASH", toHex(await sha256(code)));
+    await setSetting(env, "OWNER_CLAIM_EXP", String(Date.now() + CLAIM_TTL_MS));
+    return jsonResponse({
+      ok: true,
+      botUsername: me.result.username,
+      claimUrl: `https://t.me/${me.result.username}?start=own_${code}`,
+    });
   }
 
   if (step === "install/webhook") {
@@ -1893,6 +2308,7 @@ export default {
           const secret = await getSetting(env, "WEBHOOK_SECRET");
           const origin = await getSetting(env, "WORKER_ORIGIN");
           if (!token || !secret || !origin) return;
+          await announcePendingUpdate(env);
 
           const expectedUrl = `${origin}/webhook`;
           const info = await tgCall(env, "getWebhookInfo", {});

@@ -72,6 +72,9 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 .kv span{font-size:.78rem;color:var(--muted);min-width:96px}
 .kv code{font-family:var(--mono);font-size:.84rem;direction:ltr;overflow-wrap:anywhere;flex:1;text-align:left}
 .kv button{background:none;border:0;color:var(--blue);cursor:pointer;font:inherit;font-size:.78rem}
+.check{display:flex;gap:10px;align-items:flex-start;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.88rem;cursor:pointer;margin:0 0 6px}
+.check input{margin-top:5px;accent-color:var(--acc)}
+.check small{color:var(--muted);font-size:.78rem;font-weight:400}
 .hidden{display:none!important}
 .errbox{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);color:var(--rose);border-radius:12px;padding:12px 14px;font-size:.84rem;margin-top:12px;overflow-wrap:anywhere}
 .result{border-color:rgba(52,211,153,.4)}
@@ -156,6 +159,11 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
 
   <div class="row"><button class="btn" id="authVerify" type="button" data-t="verify"></button></div>
   <div class="status" id="authStatus"></div>
+  <div id="manageBox" class="hidden">
+    <p class="hint" style="margin-top:14px" data-t="manageHelp"></p>
+    <label class="check hidden" id="manageUpdRow"><input type="checkbox" id="manageUpd"> <span><b data-t="updTitle"></b><br><small data-t="updHelp"></small></span></label>
+    <div class="row"><button class="btn ghost" id="manageBtn" type="button" data-t="manageBtn"></button></div>
+  </div>
 </section>
 
 <section class="card" id="s2">
@@ -174,6 +182,7 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
 
 <section class="card" id="s3">
   <h2><span class="num">3</span><span data-t="s3title"></span></h2>
+  <label class="check" id="updRow"><input type="checkbox" id="updOpt"> <span><b data-t="updTitle"></b><br><small data-t="updHelp"></small></span></label>
   <div class="row" style="margin-top:4px"><button class="btn big" id="install" type="button" disabled data-t="install"></button></div>
   <div class="hint" data-t="hint"></div>
 </section>
@@ -193,6 +202,12 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
     <div><span data-t="kvHook"></span><code id="rHook"></code><button type="button" data-copy="rHook" data-t="copy"></button></div>
   </div>
   <div class="row"><a class="btn" id="rOpen" href="#" target="_blank" rel="noopener noreferrer" data-t="openBot"></a></div>
+  <div id="ownBox" class="hidden">
+    <p class="lead" style="margin-top:18px" data-t="ownLead"></p>
+    <div class="row"><a class="btn ghost" id="rOwn" href="#" target="_blank" rel="noopener noreferrer" data-t="ownBtn"></a></div>
+    <div class="hint" data-t="ownHint"></div>
+  </div>
+  <div class="hint hidden" id="updNote"></div>
 </section>
 
 <footer>Arizo Movie · <span data-t="footer"></span></footer>
@@ -209,9 +224,13 @@ iAcct:'اکانت Cloudflare',iSubLabel:'اکانت جدید است؛ یک نا�
 iHint:'پس از نصب، یک آدرس و یک کلید راه‌اندازی می‌گیرید و ادامهٔ کار روی Worker خودتان انجام می‌شود.',
 iDoneLead:'نصب انجام شد. ادامهٔ کار (توکن ربات و کلید TMDB) روی Worker خودتان است.',iUrl:'آدرس Worker شما',iKey:'کلید راه‌اندازی',iKeyWarn:'⚠️ این کلید فقط همین یک بار نمایش داده می‌شود. آن را همین حالا کپی کنید؛ برای ادامه لازم است.',iOpen:'🚀 ادامه روی Worker من',
 iSteps:{resources:'ساخت دیتابیس D1',deploy:'آپلود Worker و فعال‌سازی',wait:'منتظر بالا آمدن Worker'},iPickAcct:'اکانتی با دسترسی کافی پیدا نشد؛ دسترسی‌های Workers Scripts: Edit و D1: Edit را بررسی کنید.',iNoSub:'برای ادامه یک نام workers.dev انتخاب کنید.',iWait:'Worker ساخته شد ولی هنوز در دسترس نیست؛ چند ثانیه بعد آدرس را دستی باز کنید.',
+updTitle:'بروزرسانی از داخل تلگرام',updHelp:'یک دکمهٔ «بررسی بروزرسانی» فقط برای شما در ربات اضافه می‌شود. ⚠️ برای این کار توکن Cloudflare شما به‌صورت secret روی همین Worker ذخیره می‌شود. با این توکن می‌توان کد Workerها و دیتابیس‌های D1 اکانت را عوض کرد (هر اکانتی که موقع ساخت توکن انتخاب کرده‌اید؛ پیشنهاد می‌شود فقط همین یک اکانت را انتخاب کنید). تا وقتی تیک نزنید ذخیره نمی‌شود. هر وقت خواستید توکن را از داشبورد Cloudflare باطل کنید.',
+ownLead:'برای اینکه ربات شما را مالک بشناسد (و دکمهٔ بروزرسانی را فقط به شما نشان بدهد)، یک بار این لینک را در تلگرام باز کنید.',ownBtn:'👑 مالک شدن در تلگرام',ownHint:'لینک ۲ ساعت اعتبار دارد و فقط یک بار کار می‌کند. هر کسی زودتر باز کند مالک می‌شود؛ پس همین حالا بازش کنید و جایی منتشرش نکنید.',
+updOn:'بروزرسانی از داخل تلگرام فعال شد.',updOff:'بروزرسانی از داخل تلگرام فعال نشد: ',
+manageHelp:'این ربات قبلاً نصب شده. می‌توانید بدون وارد کردن دوبارهٔ توکن ربات و کلید TMDB، فقط مالکیت و بروزرسانی را فعال کنید.',manageBtn:'👑 فقط مالک شدن و بروزرسانی',
 reqTitle:'⚠️ راه‌اندازی اجباری است',reqText:'تا این مراحل کامل نشود ربات فعال نیست و به هیچ پیامی جواب نمی‌دهد.',
 doneBannerTitle:'✅ ربات نصب شده است',doneBannerText:'اگر می‌خواهید توکن‌ها را عوض کنید، دوباره مراحل را انجام دهید.',
-s1title:'اثبات مالکیت Worker',s1lead:'فقط صاحب این Worker می‌تواند ربات را تنظیم کند. توکن فقط در همین نشست استفاده می‌شود و ذخیره نمی‌شود.',
+s1title:'اثبات مالکیت Worker',s1lead:'فقط صاحب این Worker می‌تواند ربات را تنظیم کند. توکن Cloudflare فقط در همین نشست استفاده می‌شود؛ مگر اینکه «بروزرسانی از داخل تلگرام» را روشن کنید (پایین‌تر توضیح داده شده).',
 tabCf:'توکن Cloudflare (پیشنهادی)',tabKey:'کلید راه‌اندازی',
 cf1:'با دکمهٔ زیر صفحهٔ ساخت توکن را باز کنید؛ دسترسی‌های لازم از قبل انتخاب شده‌اند.',cf2:'Continue to summary و بعد Create Token را بزنید و توکن را کپی کنید.',
 cfOpen:'🔑 ساخت توکن Cloudflare',cfLabel:'توکن Cloudflare',
@@ -220,10 +239,10 @@ verify:'بررسی',
 s2title:'اطلاعات ربات',s2lead:'این مقادیر در دیتابیس D1 خودِ شما ذخیره می‌شوند و داخل کد قرار نمی‌گیرند.',
 botLabel:'توکن ربات تلگرام',tmdbLabel:'کلید API سایت TMDB',
 s3title:'نصب',install:'☁️ نصب و فعال‌سازی',hint:'ویزارد دیتابیس را می‌سازد، تنظیمات را ذخیره می‌کند و وب‌هوک را ثبت می‌کند.',progress:'در حال نصب…',retry:'🔁 تلاش دوباره',
-done:'نصب کامل شد',doneLead:'ربات فعال است. در تلگرام /start را بزنید.',kvBot:'ربات',kvHook:'وب‌هوک',copy:'کپی',openBot:'🚀 باز کردن ربات',footer:'توکن‌ها ذخیره نمی‌شوند',
+done:'نصب کامل شد',doneLead:'ربات فعال است. در تلگرام /start را بزنید.',kvBot:'ربات',kvHook:'وب‌هوک',copy:'کپی',openBot:'🚀 باز کردن ربات',footer:'توکن Cloudflare فقط با تیک بروزرسانی ذخیره می‌شود',
 cfOk:'تأیید شد؛ این اکانت صاحب Worker است',keyOk:'کلید تأیید شد',botOk:'ربات تأیید شد: ',tmdbOk:'کلید TMDB معتبر است',
 noCfHere:'توکن Cloudflare فقط روی آدرس workers.dev کار می‌کند؛ از «کلید راه‌اندازی» استفاده کنید.',
-steps:{database:'ساخت و اتصال دیتابیس D1',save:'ذخیره تنظیمات و ساخت جدول‌ها',webhook:'ثبت وب‌هوک تلگرام',commands:'ثبت دستورات ربات',schedule:'زمان‌بندی بررسی وب‌هوک'},
+steps:{database:'ساخت و اتصال دیتابیس D1',save:'ذخیره تنظیمات و ساخت جدول‌ها',webhook:'ثبت وب‌هوک تلگرام',commands:'ثبت دستورات ربات',schedule:'زمان‌بندی بررسی وب‌هوک',updates:'فعال‌سازی بروزرسانی از داخل تلگرام',owner:'ساخت لینک مالکیت'},
 net:'ارتباط با سرور برقرار نشد',badResp:'پاسخ نامعتبر از سرور',dbWait:'دیتابیس وصل شد اما هنوز فعال نشده؛ چند ثانیه بعد دوباره امتحان کنید.'},
 en:{
 iTitle:'Install the bot on your own Cloudflare',iLead:'This page creates a copy of the bot in your own Cloudflare account. Your token is used only for this install and is never stored.',
@@ -231,9 +250,13 @@ iAcct:'Cloudflare account',iSubLabel:'New account — pick a name for your worke
 iHint:'After the install you get an address and a setup key, and you continue on your own Worker.',
 iDoneLead:'Installed. The rest (bot token and TMDB key) happens on your own Worker.',iUrl:'Your Worker address',iKey:'Setup key',iKeyWarn:'⚠️ This key is shown only once. Copy it now; you need it to continue.',iOpen:'🚀 Continue on my Worker',
 iSteps:{resources:'Create the D1 database',deploy:'Upload and enable the Worker',wait:'Wait for the Worker to come up'},iPickAcct:'No account with enough access was found; check the Workers Scripts: Edit and D1: Edit permissions.',iNoSub:'Choose a workers.dev name to continue.',iWait:'The Worker was created but is not reachable yet; open the address manually in a few seconds.',
+updTitle:'Updates from inside Telegram',updHelp:'Adds a "Check for updates" button for you only. ⚠️ To do that, your Cloudflare token is stored as a secret on this Worker. That token can change the code of Workers and D1 databases in the account(s) selected when it was created (we suggest selecting only this one account). It is not stored unless you tick this box. Revoke the token in the Cloudflare dashboard at any time.',
+ownLead:'So the bot knows you are the owner (and shows the update button only to you), open this link in Telegram once.',ownBtn:'👑 Become the owner in Telegram',ownHint:'The link is valid for 2 hours and works once. Whoever opens it first becomes the owner, so open it now and do not share it.',
+updOn:'In-Telegram updates are enabled.',updOff:'In-Telegram updates were not enabled: ',
+manageHelp:'This bot is already installed. You can enable ownership and updates only, without entering the bot token and TMDB key again.',manageBtn:'👑 Only become owner and enable updates',
 reqTitle:'⚠️ Setup is required',reqText:'Until these steps are finished the bot is inactive and will not answer any message.',
 doneBannerTitle:'✅ The bot is installed',doneBannerText:'To change the tokens, run the steps again.',
-s1title:'Prove Worker ownership',s1lead:'Only the owner of this Worker can configure the bot. The token is used in this session only and is never stored.',
+s1title:'Prove Worker ownership',s1lead:'Only the owner of this Worker can configure the bot. The Cloudflare token is used in this session only, unless you turn on "Updates from inside Telegram" (explained below).',
 tabCf:'Cloudflare token (recommended)',tabKey:'Setup key',
 cf1:'Open the token page with the button below; the required permissions are pre-selected.',cf2:'Click Continue to summary, then Create Token, and copy the token.',
 cfOpen:'🔑 Create Cloudflare token',cfLabel:'Cloudflare token',
@@ -242,10 +265,10 @@ verify:'Verify',
 s2title:'Bot details',s2lead:'These values are stored in your own D1 database, never in the source code.',
 botLabel:'Telegram bot token',tmdbLabel:'TMDB API key',
 s3title:'Install',install:'☁️ Install & activate',hint:'The wizard creates the database, saves the settings and registers the webhook.',progress:'Installing…',retry:'🔁 Retry',
-done:'Installation complete',doneLead:'The bot is live. Send /start in Telegram.',kvBot:'Bot',kvHook:'Webhook',copy:'Copy',openBot:'🚀 Open the bot',footer:'tokens are never stored',
+done:'Installation complete',doneLead:'The bot is live. Send /start in Telegram.',kvBot:'Bot',kvHook:'Webhook',copy:'Copy',openBot:'🚀 Open the bot',footer:'the Cloudflare token is stored only if you enable updates',
 cfOk:'Confirmed; this account owns the Worker',keyOk:'Key accepted',botOk:'Bot confirmed: ',tmdbOk:'TMDB key is valid',
 noCfHere:'A Cloudflare token only works on a workers.dev address; use the setup key instead.',
-steps:{database:'Create and bind the D1 database',save:'Save settings and create tables',webhook:'Register Telegram webhook',commands:'Register bot commands',schedule:'Schedule the webhook check'},
+steps:{database:'Create and bind the D1 database',save:'Save settings and create tables',webhook:'Register Telegram webhook',commands:'Register bot commands',schedule:'Schedule the webhook check',updates:'Enable in-Telegram updates',owner:'Create the ownership link'},
 net:'Could not reach the server',badResp:'Invalid server response',dbWait:'The database is bound but not active yet; try again in a few seconds.'}
 };
 var lang=document.documentElement.getAttribute('lang')==='en'?'en':'fa';
@@ -366,7 +389,7 @@ $('botToken').oninput=function(){S.bot=null;refresh();};
 $('tmdbKey').oninput=function(){S.tmdb=false;refresh();};
 
 function setMode(m){
-  S.mode=m;S.auth=false;
+  S.mode=m;S.auth=false;$('updRow').classList.toggle('hidden',m!=='cf');
   var tabs=document.querySelectorAll('.tab');
   for(var i=0;i<tabs.length;i++)tabs[i].classList.toggle('on',tabs[i].getAttribute('data-tab')===m);
   $('paneCf').classList.toggle('hidden',m!=='cf');$('paneKey').classList.toggle('hidden',m!=='key');
@@ -380,6 +403,8 @@ $('authVerify').onclick=function(){
   api(S.mode==='cf'?'cloudflare/verify':'key/verify',withCreds({})).then(function(d){
     b.disabled=false;S.auth=!!d.ok;
     setStatus('authStatus',d.ok?'ok':'bad',d.ok?'✅ '+(S.mode==='cf'?T[lang].cfOk:T[lang].keyOk):'❌ '+msgOf(d));
+    $('manageBox').classList.toggle('hidden',!(d.ok&&S.info.configured));
+    $('manageUpdRow').classList.toggle('hidden',S.mode!=='cf');
     refresh();
   });
 };
@@ -419,7 +444,8 @@ function waitForDb(n){
     return new Promise(function(r){setTimeout(r,1500)}).then(function(){return waitForDb(n+1)});
   });
 }
-function install(){
+function install(manageOnly){
+  S.manage=manageOnly===true;
   S.busy=true;refresh();
   $('progressCard').classList.remove('hidden');$('resultCard').classList.add('hidden');
   $('errBox').classList.add('hidden');$('retryRow').classList.add('hidden');
@@ -427,19 +453,31 @@ function install(){
   getStatus().then(function(s){
     if(s)S.info=s;
     STEP_IDS=[];
-    if(!S.info.hasDb)STEP_IDS.push('database');
-    STEP_IDS.push('save','webhook','commands');
-    if(S.mode==='cf')STEP_IDS.push('schedule');
+    var wantUpd;
+    if(S.manage){
+      wantUpd=S.mode==='cf'&&$('manageUpd').checked;
+      if(wantUpd)STEP_IDS.push('updates');
+      STEP_IDS.push('owner');
+    }else{
+      if(!S.info.hasDb)STEP_IDS.push('database');
+      STEP_IDS.push('save','webhook','commands');
+      wantUpd=S.mode==='cf'&&$('updOpt').checked;
+      if(S.mode==='cf')STEP_IDS.push('schedule');
+      if(wantUpd)STEP_IDS.push('updates');
+      STEP_IDS.push('owner');
+    }
     STEP_STATE={};renderLog();
-    var base=withCreds({botToken:$('botToken').value.trim(),tmdbKey:$('tmdbKey').value.trim()});
+    var base=withCreds(S.manage?{}:{botToken:$('botToken').value.trim(),tmdbKey:$('tmdbKey').value.trim()});
     var result={};
     function run(i){
       if(i>=STEP_IDS.length)return Promise.resolve(true);
       var id=STEP_IDS[i];STEP_STATE[id]='run';renderLog();S.bar=25+Math.round(i*70/STEP_IDS.length);refresh();
       return api('install/'+id,base).then(function(d){
+        if(!d.ok&&id==='updates'){result.updErr=msgOf(d);STEP_STATE[id]='done';renderLog();return run(i+1);}
         if(!d.ok){fail(id,d);return false;}
         if(d.webhookUrl)result.hook=d.webhookUrl;
         if(d.botUsername)result.bot=d.botUsername;
+        if(d.claimUrl)result.claim=d.claimUrl;
         if(id==='database'&&!d.skipped){
           return waitForDb(0).then(function(ready){
             if(!ready){fail(id,{fa:T.fa.dbWait,en:T.en.dbWait});return false;}
@@ -452,17 +490,24 @@ function install(){
     return run(0).then(function(ok){
       if(!ok)return;
       S.bar=100;refresh();
-      $('rBot').textContent='@'+(result.bot||S.bot);$('rHook').textContent=result.hook||'';
-      $('rOpen').href='https://t.me/'+encodeURIComponent(result.bot||S.bot);
+      var botName=result.bot||S.bot||'';
+      $('rBot').textContent=botName?'@'+botName:'';$('rHook').textContent=result.hook||location.origin+'/webhook';
+      $('rOpen').href='https://t.me/'+encodeURIComponent(botName);
+      if(result.claim){$('rOwn').href=result.claim;$('ownBox').classList.remove('hidden');}
+      var note=$('updNote');
+      if(wantUpd){note.textContent=result.updErr?('⚠️ '+T[lang].updOff+result.updErr):('✅ '+T[lang].updOn);note.classList.remove('hidden');}
       $('progressCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
       $('reqBanner').classList.add('hidden');$('doneBanner').classList.remove('hidden');
       $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
       $('cfToken').value='';$('setupKey').value='';$('botToken').value='';$('tmdbKey').value='';
+      $('manageBox').classList.add('hidden');
       S.busy=false;
     });
   });
 }
-$('install').onclick=install;$('retry').onclick=install;
+$('install').onclick=function(){install(false)};
+$('manageBtn').onclick=function(){install(true)};
+$('retry').onclick=function(){install(S.manage)};
 
 var cps=document.querySelectorAll('[data-copy]');
 for(var c=0;c<cps.length;c++){cps[c].onclick=function(){var t=$(this.getAttribute('data-copy')).textContent;var b=this;

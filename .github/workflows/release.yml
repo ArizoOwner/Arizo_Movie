@@ -1,11 +1,20 @@
 name: Release single-file Worker
 
-# Push a tag like v2.1.0 and this builds dist/worker.js (the whole bot, wizard
-# included, in ONE file) and attaches it to a GitHub release.
+# Two ways to publish:
+#   1. Push a tag like v2.1.0  -> builds dist/worker.js and creates the release.
+#   2. Run this workflow by hand (Actions -> Run workflow) with an existing tag
+#      -> rebuilds and REPLACES worker.js on that same release. Bots that follow
+#      the release see the changed file (its BUILD_ID differs) and offer an update
+#      even though no new release was created.
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to refresh (e.g. v2.1.1)"
+        required: true
 
 permissions:
   contents: write
@@ -14,8 +23,13 @@ jobs:
   release:
     name: Build and publish release
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -29,13 +43,15 @@ jobs:
           node --check worker.js
           node --check dist/worker.js
 
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+      - name: Create or refresh the release
         run: |
-          gh release create "$TAG" dist/worker.js \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Arizo Movie $TAG" \
-            --generate-notes \
-            --notes "Single-file Cloudflare Worker. Paste worker.js into a new Worker, open its address, and the setup wizard starts automatically. See the README."
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/worker.js --clobber --repo "$GITHUB_REPOSITORY"
+            echo "Refreshed worker.js on existing release $TAG"
+          else
+            gh release create "$TAG" dist/worker.js \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Arizo Movie $TAG" \
+              --generate-notes \
+              --notes "Single-file Cloudflare Worker. Paste worker.js into a new Worker, open its address, and the setup wizard starts automatically. See the README."
+          fi

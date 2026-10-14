@@ -27,3 +27,6 @@ Thumbs.db
 
 # Build output (attached to GitHub releases by CI)
 dist/
+
+# Local config for the public installer instance
+wrangler.public.toml
