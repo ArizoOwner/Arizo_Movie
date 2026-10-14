@@ -10,9 +10,10 @@
   3. Google Translate API for Persian title resolution fallback
 
 ### 2. Secrets & Credentials
-- Tokens (`BOT_TOKEN`, `TMDB_KEY`) are stored encrypted within your Cloudflare Worker environment and D1 database.
-- Webhook endpoints are protected using a dynamically generated `secret_token` header.
-- Credentials are never transmitted to any third-party analytics or external repository.
+- `BOT_TOKEN` and `TMDB_KEY` entered in the wizard are stored **as plain text** in the `settings` table of your own Cloudflare D1 database. They are not encrypted by this project; they are protected by your Cloudflare account's access controls. Treat anyone with access to that account or database as able to read them.
+- `SETUP_KEY` is stored only as a Cloudflare Worker secret and is never written to D1.
+- The Telegram webhook is protected by a randomly generated `secret_token` that is checked on every request.
+- Credentials are never sent anywhere except Telegram and TMDB, to verify and use them.
 
 ### 3. Data Retention & Deletion
 - User session states are automatically cleared upon workflow completion or when invoking `/cancel`.

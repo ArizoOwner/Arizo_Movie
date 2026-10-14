@@ -15,17 +15,20 @@ Only the latest release running on the `main` branch receives security updates.
 
 1. **Zero Hardcoded Secrets**:
    - Never commit `BOT_TOKEN`, `TMDB_KEY`, `CLOUDFLARE_API_TOKEN`, or any personal access tokens to GitHub.
-   - All credentials should either be configured via Cloudflare Secrets (`wrangler secret put <NAME>`), GitHub Actions Secrets, or dynamically through the Web Setup Wizard (`/setup`).
+   - Bot and TMDB credentials are entered in the setup wizard and stored in your own D1 database; `SETUP_KEY` is a Worker secret (`wrangler secret put SETUP_KEY`); CI credentials belong in GitHub Actions Secrets.
 
 2. **Telegram Webhook Verification**:
    - The bot employs Telegram's `secret_token` mechanism (`X-Telegram-Bot-Api-Secret-Token`).
-   - Secret validation is executed using **constant-time comparisons (`timingSafeEqual`)** to mitigate timing attack vectors.
+   - The secret is compared with a constant-time check, and requests without it are rejected with 401.
 
-3. **Input Sanitization & Output Encoding**:
+3. **Setup Wizard Protection**:
+   - The setup wizard API requires `SETUP_KEY` (checked via SHA-256 digests so neither length nor content leaks through timing), only accepts same-origin JSON requests, and refuses all requests while `SETUP_KEY` is unset or shorter than 24 characters.
+
+4. **Input Sanitization & Output Encoding**:
    - All external movie titles, user messages, and API strings undergo strict HTML escaping (`escapeHtml`) prior to inclusion in Telegram message bodies or the web interface, preventing HTML injection and XSS.
 
-4. **Security Headers**:
-   - The Web Setup Wizard serves standard security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
+5. **Security Headers**:
+   - The wizard is served with a strict Content-Security-Policy plus `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 
 ---
 

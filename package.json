@@ -21,6 +21,6 @@
   "author": "ArizoOwner",
   "license": "MIT",
   "devDependencies": {
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.0.0"
   }
 }

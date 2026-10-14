@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Arizo Movie — Setup Wizard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+(function(){try{var t=localStorage.getItem('am_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('am_lang')||'fa';document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='en'?'ltr':'rtl');}catch(e){}})();
+</script>
+<style>
+:root{--bg:#0a0a0f;--bg2:radial-gradient(circle at 15% 10%,rgba(220,38,38,.28),transparent 45%),radial-gradient(circle at 85% 85%,rgba(245,158,11,.18),transparent 45%);--card:rgba(22,22,32,.8);--card2:rgba(34,34,48,.65);--line:rgba(255,255,255,.09);--text:#f8fafc;--muted:#a1a1aa;--dim:#71717a;--acc:#ef4444;--acc2:#f59e0b;--green:#34d399;--amber:#fbbf24;--rose:#f87171;--blue:#60a5fa;--r:16px;--font:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',Consolas,monospace}
+[data-theme="light"]{--bg:#f6f4f1;--bg2:radial-gradient(circle at 15% 10%,rgba(239,68,68,.12),transparent 45%),radial-gradient(circle at 85% 85%,rgba(245,158,11,.12),transparent 45%);--card:rgba(255,255,255,.9);--card2:rgba(245,243,240,.95);--line:rgba(15,23,42,.1);--text:#18181b;--muted:#52525b;--dim:#71717a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);background-image:var(--bg2);background-attachment:fixed;color:var(--text);line-height:1.7;min-height:100vh;padding:24px 16px 56px}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:760px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:24px;box-shadow:0 8px 24px rgba(239,68,68,.35)}
+.brand h1{font-size:1.15rem;font-weight:800}.brand small{color:var(--muted);font-size:.78rem;display:block}
+.tools{display:flex;gap:8px}
+.chip{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:7px 14px;font:inherit;font-size:.8rem;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.progress{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;margin:6px 0 18px}
+.progress i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--green));transition:width .4s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.card h2{font-size:1.02rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card p.lead{color:var(--muted);font-size:.86rem;margin-bottom:12px}
+.num{width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;display:inline-grid;place-items:center;font-size:.8rem;font-weight:800;flex:none}
+.steps{list-style:none;display:grid;gap:8px;margin:0 0 14px}
+.steps li{font-size:.86rem;color:var(--muted)}
+.steps b{color:var(--text)}
+label{display:block;font-size:.8rem;font-weight:600;margin:12px 0 6px}
+.field{position:relative}
+input[type=text],input[type=password]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:.86rem;outline:none;direction:ltr;text-align:left}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(239,68,68,.18)}
+.field input{padding-right:44px}
+.eye{position:absolute;top:50%;right:10px;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;font-size:1rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+button.btn,a.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--acc),#b91c1c);color:#fff;border:0;border-radius:12px;padding:12px 22px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;text-decoration:none;box-shadow:0 8px 22px rgba(185,28,28,.3);transition:.15s}
+button.btn:hover:not(:disabled),a.btn:hover{transform:translateY(-1px);text-decoration:none}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:var(--card2);color:var(--text);box-shadow:none;border:1px solid var(--line)}
+.btn.big{padding:15px 30px;font-size:1rem;width:100%}
+.status{font-size:.84rem;margin-top:10px;min-height:1.2em;overflow-wrap:anywhere}
+.ok{color:var(--green)}.bad{color:var(--rose)}.warn{color:var(--amber)}
+.hint{font-size:.78rem;color:var(--dim);margin-top:8px}
+.log{list-style:none;display:grid;gap:8px}
+.log li{display:flex;gap:10px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:.86rem}
+.log .ic{width:22px;text-align:center;flex:none}
+.log li.run .ic::before{content:'⏳'}.log li.done .ic::before{content:'✅'}.log li.fail .ic::before{content:'❌'}.log li.wait .ic::before{content:'○';color:var(--dim)}
+.log li.fail{border-color:rgba(248,113,113,.4)}
+.kv{display:grid;gap:10px;margin:14px 0}
+.kv div{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.kv span{font-size:.78rem;color:var(--muted);min-width:96px}
+.kv code{font-family:var(--mono);font-size:.84rem;direction:ltr;overflow-wrap:anywhere;flex:1;text-align:left}
+.kv button{background:none;border:0;color:var(--blue);cursor:pointer;font:inherit;font-size:.78rem}
+.hidden{display:none!important}
+.warnbox{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:.82rem;margin-top:12px}
+.errbox{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);color:var(--rose);border-radius:12px;padding:12px 14px;font-size:.84rem;margin-top:12px;overflow-wrap:anywhere}
+.result{border-color:rgba(52,211,153,.35)}
+footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
+@media(max-width:560px){.kv div{flex-wrap:wrap}.kv span{min-width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><div class="logo">🎬</div><div><h1>Arizo Movie</h1><small>SETUP WIZARD</small></div></div>
+  <div class="tools">
+    <button class="chip" id="langBtn" type="button">English</button>
+    <button class="chip" id="themeBtn" type="button">☀️</button>
+  </div>
+</header>
+
+<div class="progress"><i id="bar"></i></div>
+
+<section class="card" id="s1">
+  <h2><span class="num">1</span><span data-t="s1title"></span></h2>
+  <p class="lead" data-t="s1lead"></p>
+  <ol class="steps">
+    <li>🔹 <span data-t="s1a"></span></li>
+    <li>🔹 <span data-t="s1b"></span></li>
+  </ol>
+  <label for="setupKey" data-t="s1label"></label>
+  <div class="field"><input type="password" id="setupKey" autocomplete="off" spellcheck="false" placeholder="SETUP_KEY"><button class="eye" type="button" data-eye="setupKey" aria-label="show">👁</button></div>
+  <div class="row"><button class="btn" id="cfVerify" type="button" data-t="verify"></button></div>
+  <div class="status" id="cfStatus"></div>
+</section>
+
+<section class="card" id="s2">
+  <h2><span class="num">2</span><span data-t="s2title"></span></h2>
+  <p class="lead" data-t="s2lead"></p>
+  <label for="botToken" data-t="botLabel"></label>
+  <div class="field"><input type="password" id="botToken" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"><button class="eye" type="button" data-eye="botToken" aria-label="show">👁</button></div>
+  <div class="row"><button class="btn ghost" id="botVerify" type="button" data-t="verify" disabled></button><a class="btn ghost" href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">@BotFather</a></div>
+  <div class="status" id="botStatus"></div>
+
+  <label for="tmdbKey" data-t="tmdbLabel"></label>
+  <div class="field"><input type="password" id="tmdbKey" autocomplete="off" spellcheck="false" placeholder="TMDB API key (v3)"><button class="eye" type="button" data-eye="tmdbKey" aria-label="show">👁</button></div>
+  <div class="row"><button class="btn ghost" id="tmdbVerify" type="button" data-t="verify" disabled></button><a class="btn ghost" href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API</a></div>
+  <div class="status" id="tmdbStatus"></div>
+
+</section>
+
+<section class="card" id="s3">
+  <h2><span class="num">3</span><span data-t="s3title"></span></h2>
+  <div class="row" style="margin-top:4px"><button class="btn big" id="install" type="button" disabled data-t="install"></button></div>
+  <div class="hint" data-t="hint"></div>
+</section>
+
+<section class="card hidden" id="progressCard">
+  <h2>⚙️ <span data-t="progress"></span></h2>
+  <ul class="log" id="log"></ul>
+  <div class="errbox hidden" id="errBox"></div>
+  <div class="row hidden" id="retryRow"><button class="btn" id="retry" type="button" data-t="retry"></button></div>
+</section>
+
+<section class="card result hidden" id="resultCard">
+  <h2>🎉 <span data-t="done"></span></h2>
+  <p class="lead" data-t="doneLead"></p>
+  <div class="kv">
+    <div><span data-t="kvBot"></span><code id="rBot"></code><button type="button" data-copy="rBot" data-t="copy"></button></div>
+    <div><span data-t="kvHook"></span><code id="rHook"></code><button type="button" data-copy="rHook" data-t="copy"></button></div>
+  </div>
+  <div class="row"><a class="btn" id="rOpen" href="#" target="_blank" rel="noopener noreferrer" data-t="openBot"></a></div>
+</section>
+
+<section class="card">
+  <h2>🚀 <span data-t="ghTitle"></span></h2>
+  <p class="lead" data-t="ghLead"></p>
+  <ol class="steps">
+    <li>🔹 <span data-t="gh1"></span></li>
+    <li>🔹 <span data-t="gh2"></span></li>
+  </ol>
+  <a class="btn ghost" href="https://github.com/ArizoOwner/Arizo_Movie" target="_blank" rel="noopener noreferrer" data-t="ghOpen"></a>
+</section>
+
+<footer>Arizo Movie · <span data-t="footer"></span></footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var T={
+fa:{
+s1title:'اثبات مالکیت (کلید راه‌اندازی)',s1lead:'برای اینکه فقط صاحب این Worker بتواند ربات را تنظیم کند، یک کلید راه‌اندازی (SETUP_KEY) لازم است. این کلید را خودتان می‌سازید و فقط در Cloudflare ذخیره می‌شود.',
+s1a:'یک متن تصادفی حداقل ۲۴ کاراکتری بسازید و در Cloudflare ← Workers ← این Worker ← Settings ← Variables and Secrets با نام SETUP_KEY و نوع Secret ذخیره کنید.',s1b:'همان متن را پایین وارد کنید. (جزئیات در README)',s1label:'کلید راه‌اندازی (SETUP_KEY)',verify:'بررسی',
+s2title:'اطلاعات ربات',s2lead:'این مقادیر در دیتابیس D1 خودِ شما ذخیره می‌شوند و داخل کد قرار نمی‌گیرند.',
+botLabel:'توکن ربات تلگرام',tmdbLabel:'کلید API سایت TMDB',
+s3title:'نصب',install:'☁️ نصب و فعال‌سازی',hint:'کلید راه‌اندازی فقط در همین صفحه استفاده می‌شود و ذخیره نمی‌شود.',progress:'در حال نصب…',retry:'🔁 تلاش دوباره',
+done:'نصب کامل شد',doneLead:'ربات فعال است. در تلگرام /start را بزنید.',kvBot:'ربات',kvHook:'وب‌هوک',copy:'کپی',openBot:'🚀 باز کردن ربات',
+ghTitle:'استقرار خودکار با GitHub Actions',ghLead:'اختیاری: با هر تغییر در ریپو، Worker خودکار دیپلوی می‌شود (نیاز به ریپوی شخصی شما).',gh1:'در ریپوی خود: Settings ← Secrets and variables ← Actions',gh2:'دو سکرت CLOUDFLARE_API_TOKEN (با دسترسی Edit برای Workers و D1) و CLOUDFLARE_ACCOUNT_ID را اضافه کنید.',ghOpen:'📦 ریپوی پروژه',footer:'توکن‌ها ذخیره نمی‌شوند',
+cfOk:'کلید تأیید شد',botOk:'ربات تأیید شد: ',tmdbOk:'کلید TMDB معتبر است',
+steps:['ذخیره تنظیمات و ساخت جدول‌ها','ثبت وب‌هوک تلگرام','ثبت دستورات ربات'],net:'ارتباط با سرور برقرار نشد',badResp:'پاسخ نامعتبر از سرور'},
+en:{
+s1title:'Prove ownership (setup key)',s1lead:'Only the owner of this Worker may configure the bot, so a setup key (SETUP_KEY) is required. You create it yourself and it is stored only in Cloudflare.',
+s1a:'Generate a random string of at least 24 characters and save it in Cloudflare → Workers → this Worker → Settings → Variables and Secrets as SETUP_KEY (type: Secret).',s1b:'Enter the same string below. (Details in the README)',s1label:'Setup key (SETUP_KEY)',verify:'Verify',
+s2title:'Bot details',s2lead:'These values are stored in your own D1 database, never in the source code.',
+botLabel:'Telegram bot token',tmdbLabel:'TMDB API key',
+s3title:'Install',install:'☁️ Install & activate',hint:'The setup key is only used on this page and is never stored.',progress:'Installing…',retry:'🔁 Retry',
+done:'Installation complete',doneLead:'The bot is live. Send /start in Telegram.',kvBot:'Bot',kvHook:'Webhook',copy:'Copy',openBot:'🚀 Open the bot',
+ghTitle:'Automatic deploys with GitHub Actions',ghLead:'Optional: every push to the repo redeploys the Worker automatically.',gh1:'In your repo: Settings → Secrets and variables → Actions',gh2:'Add two secrets: CLOUDFLARE_API_TOKEN (Edit access for Workers and D1) and CLOUDFLARE_ACCOUNT_ID.',ghOpen:'📦 Project repository',footer:'tokens are never stored',
+cfOk:'Key accepted',botOk:'Bot confirmed: ',tmdbOk:'TMDB key is valid',
+steps:['Save settings and create tables','Register Telegram webhook','Register bot commands'],net:'Could not reach the server',badResp:'Invalid server response'}
+};
+var lang=document.documentElement.getAttribute('lang')==='en'?'en':'fa';
+function $(id){return document.getElementById(id)}
+function applyLang(){
+  document.documentElement.setAttribute('lang',lang);document.documentElement.setAttribute('dir',lang==='en'?'ltr':'rtl');
+  var n=document.querySelectorAll('[data-t]');
+  for(var i=0;i<n.length;i++){var v=T[lang][n[i].getAttribute('data-t')];if(typeof v==='string')n[i].textContent=v;}
+  $('langBtn').textContent=lang==='en'?'فارسی':'English';
+  try{localStorage.setItem('am_lang',lang)}catch(e){}
+}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);$('themeBtn').textContent=t==='light'?'🌙':'☀️';try{localStorage.setItem('am_theme',t)}catch(e){}}
+$('langBtn').onclick=function(){lang=lang==='en'?'fa':'en';applyLang();};
+$('themeBtn').onclick=function(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');};
+applyTheme(document.documentElement.getAttribute('data-theme')||'dark');applyLang();
+
+var eyes=document.querySelectorAll('[data-eye]');
+for(var e=0;e<eyes.length;e++){eyes[e].onclick=function(){var i=$(this.getAttribute('data-eye'));i.type=i.type==='password'?'text':'password';};}
+
+var S={cf:false,bot:null,tmdb:false,busy:false,bar:4};
+function setStatus(id,cls,msg){var el=$(id);el.className='status '+cls;el.textContent=msg;}
+function msgOf(d){return (d&&(lang==='en'?d.en:d.fa))||(d&&d.en)||'Error';}
+function api(step,body){
+  return fetch('/api/setup/'+step,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})})
+    .then(function(r){return r.json().catch(function(){return {ok:false,fa:T.fa.badResp,en:T.en.badResp}})})
+    .catch(function(){return {ok:false,fa:T.fa.net,en:T.en.net}});
+}
+function cf(){return $('setupKey').value.trim();}
+function refresh(){
+  $('botVerify').disabled=!(S.cf&&$('botToken').value.trim());
+  $('tmdbVerify').disabled=!(S.cf&&$('tmdbKey').value.trim());
+  $('install').disabled=!(S.cf&&S.bot&&S.tmdb)||S.busy;
+  var n=(S.cf?1:0)+(S.bot?1:0)+(S.tmdb?1:0);
+  $('bar').style.width=(S.bar>4?S.bar:(n===0?4:n===1?30:n===2?55:75))+'%';
+}
+$('botToken').oninput=function(){S.bot=null;refresh();};
+$('tmdbKey').oninput=function(){S.tmdb=false;refresh();};
+
+$('cfVerify').onclick=function(){
+  var tk=cf();if(!tk)return;var b=this;b.disabled=true;setStatus('cfStatus','','…');
+  api('key/verify',{setupKey:tk}).then(function(d){
+    b.disabled=false;S.cf=!!d.ok;
+    setStatus('cfStatus',d.ok?'ok':'bad',(d.ok?'✅ '+T[lang].cfOk:'❌ '+msgOf(d)));
+    refresh();
+  });
+};
+$('botVerify').onclick=function(){
+  var b=this;b.disabled=true;setStatus('botStatus','','…');
+  api('telegram/verify',{setupKey:cf(),botToken:$('botToken').value.trim()}).then(function(d){
+    S.bot=d.ok?d.username:null;
+    setStatus('botStatus',d.ok?'ok':'bad',d.ok?'✅ '+T[lang].botOk+'@'+d.username:'❌ '+msgOf(d));refresh();
+  });
+};
+$('tmdbVerify').onclick=function(){
+  var b=this;b.disabled=true;setStatus('tmdbStatus','','…');
+  api('tmdb/verify',{setupKey:cf(),tmdbKey:$('tmdbKey').value.trim()}).then(function(d){
+    S.tmdb=!!d.ok;
+    setStatus('tmdbStatus',d.ok?'ok':'bad',d.ok?'✅ '+T[lang].tmdbOk:'❌ '+msgOf(d));refresh();
+  });
+};
+
+var INSTALL_STEPS=['save','webhook','commands'];
+function renderLog(state){
+  var ul=$('log');ul.innerHTML='';
+  for(var i=0;i<INSTALL_STEPS.length;i++){
+    var li=document.createElement('li');li.className=state[INSTALL_STEPS[i]]||'wait';
+    var ic=document.createElement('span');ic.className='ic';
+    var tx=document.createElement('span');tx.textContent=T[lang].steps[i];
+    li.appendChild(ic);li.appendChild(tx);ul.appendChild(li);
+  }
+}
+function fail(id,state,d){
+  state[id]='fail';renderLog(state);
+  $('errBox').classList.remove('hidden');$('errBox').textContent='❌ '+msgOf(d);
+  $('retryRow').classList.remove('hidden');S.busy=false;refresh();
+}
+function install(){
+  S.busy=true;refresh();
+  $('progressCard').classList.remove('hidden');$('resultCard').classList.add('hidden');
+  $('errBox').classList.add('hidden');$('retryRow').classList.add('hidden');
+  var state={};renderLog(state);
+  var base={setupKey:cf(),botToken:$('botToken').value.trim(),tmdbKey:$('tmdbKey').value.trim()};
+  var result={};
+  function run(i){
+    if(i>=INSTALL_STEPS.length)return Promise.resolve(true);
+    var id=INSTALL_STEPS[i];state[id]='run';renderLog(state);S.bar=30+i*20;refresh();
+    return api('install/'+id,base).then(function(d){
+      if(!d.ok){fail(id,state,d);return false;}
+      if(d.webhookUrl)result.hook=d.webhookUrl;
+      if(d.botUsername)result.bot=d.botUsername;
+      state[id]='done';renderLog(state);return run(i+1);
+    });
+  }
+  run(0).then(function(ok){
+    if(!ok)return;
+    S.bar=100;refresh();
+    $('rBot').textContent='@'+(result.bot||S.bot);$('rHook').textContent=result.hook||'';
+    $('rOpen').href='https://t.me/'+encodeURIComponent(result.bot||S.bot);
+    $('progressCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
+    $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+    // the secrets are no longer needed in the page
+    $('setupKey').value='';$('botToken').value='';$('tmdbKey').value='';
+    S.busy=false;
+  });
+}
+$('install').onclick=install;$('retry').onclick=install;
+
+var cps=document.querySelectorAll('[data-copy]');
+for(var c=0;c<cps.length;c++){cps[c].onclick=function(){var t=$(this.getAttribute('data-copy')).textContent;var b=this;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){var o=b.textContent;b.textContent='✓';setTimeout(function(){b.textContent=o},1200)}).catch(function(){});};}
+refresh();
+})();
+</script>
+</body>
+</html>

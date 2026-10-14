@@ -5,6 +5,9 @@
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
+import WIZARD_HTML from "./wizard.html";
+
+
 // ─── دیکشنری ترجمه ژانرها به فارسی برای هشتگ‌گذاری ───────────────────────────
 const GENRE_MAP = {
   action: "اکشن",
@@ -1186,485 +1189,250 @@ async function renderPosterGallery(env, chatId, messageId, pending, isEdit = fal
   return sendPhoto(env, chatId, posterUrl, captionText, keyboard);
 }
 
-// ─── ویزارد راه‌اندازی تحت وب (WIZARD AUTO SETUP) ─────────────────────────────
-function renderSetupWizardHtml(hostUrl, isConfigured, currentBotToken, currentTmdbKey, currentAdminId) {
-  const maskedToken = currentBotToken ? currentBotToken.slice(0, 10) + "..." + currentBotToken.slice(-6) : "";
-  const maskedTmdb = currentTmdbKey ? currentTmdbKey.slice(0, 8) + "..." : "";
+// ─── Setup wizard (served from wizard.html) + authenticated setup API ─────────
+const SECURITY_HEADERS = {
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
 
-  return `<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arizo Movie | ویزارد راه‌اندازی ۲۴ ساعته ربات سینمایی</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap">
-  <style>
-    :root {
-      --bg: #090d16;
-      --card-bg: rgba(22, 30, 48, 0.7);
-      --border: rgba(255, 255, 255, 0.1);
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --success: #10b981;
-      --danger: #ef4444;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: radial-gradient(circle at top right, #1e1b4b, #090d16 60%);
-      color: var(--text);
-      font-family: 'Vazirmatn', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px 16px;
-    }
-    .container {
-      width: 100%;
-      max-width: 760px;
-      backdrop-filter: blur(16px);
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 36px 32px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 16px;
-      border-radius: 9999px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 14px;
-    }
-    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-warn { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    h1 { font-size: 26px; font-weight: 900; margin-bottom: 8px; color: #fff; }
-    p.subtitle { color: var(--text-muted); font-size: 15px; line-height: 1.7; }
-    .step-card {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 22px;
-      margin-bottom: 20px;
-    }
-    .step-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 16px;
-    }
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .form-group {
-      margin-bottom: 14px;
-    }
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      color: #e5e7eb;
-      margin-bottom: 6px;
-    }
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
-    input {
-      flex: 1;
-      padding: 12px 14px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
-      color: #fff;
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
-      direction: ltr;
-      text-align: left;
-      transition: border-color 0.2s;
-    }
-    input:focus { border-color: var(--primary); }
-    button.btn {
-      padding: 11px 18px;
-      border: none;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-success { background: var(--success); color: #fff; width: 100%; justify-content: center; padding: 14px; font-size: 16px; margin-top: 8px; }
-    .btn-success:hover { background: #059669; }
-    .btn-secondary { background: rgba(255, 255, 255, 0.1); color: #fff; }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.18); }
-    .help-hint {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 5px;
-      line-height: 1.6;
-    }
-    .result-box {
-      margin-top: 10px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      display: none;
-    }
-    .result-ok { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .result-err { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .footer {
-      text-align: center;
-      margin-top: 24px;
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-    .footer a { color: #60a5fa; text-decoration: none; }
-    code {
-      background: rgba(0, 0, 0, 0.4);
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 12px;
-      direction: ltr;
-      display: inline-block;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <span class="badge ${isConfigured ? "badge-ok" : "badge-warn"}">
-        ${isConfigured ? "⚡ سیستم متصل و آماده است" : "⚙️ در حال آماده‌سازی و راه‌اندازی"}
-      </span>
-      <h1>🎬 Arizo Movie | ویزارد راه‌اندازی ۲۴ ساعته</h1>
-      <p class="subtitle">استقرار سرورلس روی Cloudflare Workers بدون قطعی، اتصال هوشمند دیتابیس D1 و ثبت آنی وب‌هوک تلگرام</p>
-    </div>
+// The wizard is a single static page: inline script/style plus Google Fonts.
+const WIZARD_CSP =
+  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; " +
+  "font-src https://fonts.gstatic.com; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
-    <!-- گام اول: توکن‌ها و کلیدها -->
-    <div class="step-card">
-      <div class="step-title">
-        <span class="step-num">۱</span>
-        <span>تنظیم توکن‌ها و دسترسی‌ها (کاملاً پویا)</span>
-      </div>
+const BOT_TOKEN_RE = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
+const TMDB_KEY_RE = /^[a-f0-9]{32}$/i;
+const MAX_SETUP_BODY = 10_000;
 
-      <div class="form-group">
-        <label>توکن ربات تلگرام (BOT_TOKEN)</label>
-        <div class="input-row">
-          <input type="text" id="botToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ..." value="${maskedToken ? "" : ""}">
-          <button class="btn btn-secondary" onclick="verifyBotToken()">🔍 بررسی توکن</button>
-        </div>
-        <p class="help-hint">از <a href="https://t.me/BotFather" target="_blank" style="color:#60a5fa">@BotFather</a> در تلگرام دریافت کنید.</p>
-        <div id="botVerifyRes" class="result-box"></div>
-      </div>
-
-      <div class="form-group">
-        <label>کلید API پایگاه TMDB (TheMovieDB)</label>
-        <div class="input-row">
-          <input type="text" id="tmdbKey" placeholder="مثال: a1b2c3d4e5f67890abcdef..." value="${maskedTmdb ? "" : ""}">
-          <button class="btn btn-secondary" onclick="verifyTmdbKey()">🔍 بررسی کلید</button>
-        </div>
-        <p class="help-hint">کلید رایگان از <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color:#60a5fa">سایت TMDB</a> برای دریافت اطلاعات فیلم و سریال.</p>
-        <div id="tmdbVerifyRes" class="result-box"></div>
-      </div>
-
-      <div class="form-group">
-        <label>شناسه عددی ادمین تلگرام (ADMIN_ID)</label>
-        <input type="text" id="adminId" placeholder="مثال: 123456789" value="${currentAdminId || ""}">
-        <p class="help-hint">آیدی عددی خود را از ربات <a href="https://t.me/userinfobot" target="_blank" style="color:#60a5fa">@userinfobot</a> بگیرید.</p>
-      </div>
-    </div>
-
-    <!-- گام دوم: اتصال وب‌هوک و شروع ۲۴ ساعته -->
-    <div class="step-card">
-      <div class="step-title">
-        <span class="step-num">۲</span>
-        <span>ثبت وب‌هوک تلگرام و فعال‌سازی ۲۴/۷</span>
-      </div>
-
-      <div class="form-group">
-        <label>آدرس جاری ورکر (Worker Endpoint)</label>
-        <input type="text" id="workerUrl" value="${hostUrl}" readonly>
-        <p class="help-hint">تلگرام پیام‌ها را به مسیر <code>/webhook</code> این آدرس ارسال خواهد کرد.</p>
-      </div>
-
-      <button class="btn btn-success" onclick="installAndRegisterWebhook()">
-        🚀 راه‌اندازی، اتصال D1 و ثبت نهایی وب‌هوک
-      </button>
-
-      <div id="setupResult" class="result-box"></div>
-    </div>
-
-    <!-- گام سوم: راهنمای GitHub Actions (CI/CD) -->
-    <div class="step-card">
-      <div class="step-title">
-        <span class="step-num">۳</span>
-        <span>اتصال به گیت‌هاب برای استقرار خودکار (CI/CD)</span>
-      </div>
-      <p style="font-size:13px; color:#d1d5db; line-height:1.8;">
-        برای اینکه با هر <code>git push</code> کدها مستقیماً و خودکار روی این ورکر مستقر شوند:
-        <br>
-        ۱. به ریپازیتوری خود در GitHub بروید: <b>Settings ➜ Secrets and variables ➜ Actions</b>
-        <br>
-        ۲. یک سکرت با نام <code>CLOUDFLARE_API_TOKEN</code> حاوی توکن کلادفلر خود اضافه کنید.
-        <br>
-        ۳. شناسه اکانت کلادفلر خود را در سکرت <code>CLOUDFLARE_ACCOUNT_ID</code> قرار دهید.
-      </p>
-    </div>
-
-    <div class="footer">
-      ساخته شده با ❤️ برای استقرار ۲۴ ساعته و بدون قطعی | <b>Arizo_Movie Studio</b>
-    </div>
-  </div>
-
-  <script>
-    async function verifyBotToken() {
-      const token = document.getElementById("botToken").value.trim();
-      const resBox = document.getElementById("botVerifyRes");
-      if (!token) {
-        showMsg(resBox, "لطفاً ابتدا توکن ربات را وارد کنید.", false);
-        return;
-      }
-      showMsg(resBox, "در حال بررسی توکن با سرور تلگرام...", null);
-      try {
-        const res = await fetch("https://api.telegram.org/bot" + token + "/getMe");
-        const data = await res.json();
-        if (data.ok) {
-          showMsg(resBox, "✅ ربات تایید شد: @" + data.result.username + " (" + data.result.first_name + ")", true);
-        } else {
-          showMsg(resBox, "❌ توکن نامعتبر است: " + (data.description || "خطا"), false);
-        }
-      } catch (e) {
-        showMsg(resBox, "❌ خطا در برقراری ارتباط با تلگرام: " + e.message, false);
-      }
-    }
-
-    async function verifyTmdbKey() {
-      const key = document.getElementById("tmdbKey").value.trim();
-      const resBox = document.getElementById("tmdbVerifyRes");
-      if (!key) {
-        showMsg(resBox, "لطفاً ابتدا کلید TMDB را وارد کنید.", false);
-        return;
-      }
-      showMsg(resBox, "در حال بررسی کلید با TMDB...", null);
-      try {
-        const res = await fetch("https://api.themoviedb.org/3/authentication?api_key=" + key);
-        const data = await res.json();
-        if (data.success) {
-          showMsg(resBox, "✅ کلید TMDB معتبر است و با موفقیت تایید شد.", true);
-        } else {
-          showMsg(resBox, "❌ کلید TMDB نامعتبر است: " + (data.status_message || "خطا"), false);
-        }
-      } catch (e) {
-        showMsg(resBox, "❌ خطا در بررسی کلید TMDB: " + e.message, false);
-      }
-    }
-
-    async function installAndRegisterWebhook() {
-      const botToken = document.getElementById("botToken").value.trim();
-      const tmdbKey = document.getElementById("tmdbKey").value.trim();
-      const adminId = document.getElementById("adminId").value.trim();
-      const resBox = document.getElementById("setupResult");
-
-      showMsg(resBox, "⚙️ در حال ذخیره تنظیمات و اتصال وب‌هوک به تلگرام...", null);
-
-      try {
-        const res = await fetch("/api/setup/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bot_token: botToken, tmdb_key: tmdbKey, admin_id: adminId })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          showMsg(
-            resBox,
-            "🎉 <b>راه‌اندازی با موفقیت انجام شد!</b><br>" +
-            "⚡ دیتابیس D1 آماده‌سازی شد.<br>" +
-            "🔗 وب‌هوک ثبت شد: <code>" + data.webhook_url + "</code><br>" +
-            "🤖 هم‌اکنون به ربات خود در تلگرام پیام دهید: <b><a href='" + data.bot_link + "' target='_blank' style='color:#34d399'>" + data.bot_username + "</a></b>",
-            true
-          );
-        } else {
-          showMsg(resBox, "❌ خطا در راه‌اندازی: " + (data.error || "خطای ناشناخته"), false);
-        }
-      } catch (e) {
-        showMsg(resBox, "❌ خطای شبکه: " + e.message, false);
-      }
-    }
-
-    function showMsg(box, text, isOk) {
-      box.style.display = "block";
-      box.className = "result-box " + (isOk === true ? "result-ok" : isOk === false ? "result-err" : "");
-      if (isOk === null) {
-        box.style.background = "rgba(59, 130, 246, 0.15)";
-        box.style.color = "#93c5fd";
-        box.style.border = "1px solid rgba(59, 130, 246, 0.3)";
-      }
-      box.innerHTML = text;
-    }
-  </script>
-</body>
-</html>`;
+function jsonResponse(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...SECURITY_HEADERS,
+    },
+  });
 }
 
-// ─── Entry Point اصلی ورکر کلادفلر (Fetch & Scheduled) ────────────────────────
+function fail(status, fa, en, code) {
+  return jsonResponse({ ok: false, fa, en, code }, status);
+}
+
+async function sha256(value) {
+  const data = new TextEncoder().encode(String(value));
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+}
+
+// Compares digests so neither the content nor the length of the key leaks via timing.
+async function safeEqual(a, b) {
+  const [x, y] = await Promise.all([sha256(a), sha256(b)]);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
+// Returns null when the caller knows SETUP_KEY, otherwise the error Response.
+// SETUP_KEY is read from the Worker environment only, never from D1, so the
+// wizard cannot be used to change or bypass it.
+async function authorizeSetup(env, body) {
+  const expected = env.SETUP_KEY ? String(env.SETUP_KEY) : "";
+  if (expected.length < 24) {
+    return fail(
+      503,
+      "کلید SETUP_KEY روی Worker تنظیم نشده یا کوتاه‌تر از ۲۴ کاراکتر است.",
+      "SETUP_KEY is not set on the Worker or is shorter than 24 characters.",
+      "no_setup_key"
+    );
+  }
+  const given = typeof body.setupKey === "string" ? body.setupKey : "";
+  if (!given || !(await safeEqual(given, expected))) {
+    return fail(401, "کلید راه‌اندازی اشتباه است.", "Wrong setup key.", "bad_key");
+  }
+  return null;
+}
+
+async function telegramGetMe(botToken) {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+    return await res.json();
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
+async function handleSetupApi(request, env, url) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== url.origin) {
+    return fail(403, "درخواست از مبدأ نامعتبر.", "Cross-origin request refused.", "bad_origin");
+  }
+  if (!(request.headers.get("Content-Type") || "").includes("application/json")) {
+    return fail(415, "نوع درخواست نامعتبر است.", "Expected application/json.", "bad_type");
+  }
+  if (Number(request.headers.get("Content-Length") || 0) > MAX_SETUP_BODY) {
+    return fail(413, "درخواست بیش از حد بزرگ است.", "Request too large.", "too_large");
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return fail(400, "بدنهٔ درخواست نامعتبر است.", "Invalid JSON body.", "bad_json");
+  }
+  if (!body || typeof body !== "object") {
+    return fail(400, "بدنهٔ درخواست نامعتبر است.", "Invalid JSON body.", "bad_json");
+  }
+
+  const denied = await authorizeSetup(env, body);
+  if (denied) return denied;
+
+  const step = url.pathname.slice("/api/setup/".length);
+
+  if (step === "key/verify") {
+    return jsonResponse({ ok: true });
+  }
+
+  if (step === "telegram/verify") {
+    const token = String(body.botToken || "").trim();
+    if (!BOT_TOKEN_RE.test(token)) {
+      return fail(400, "قالب توکن ربات معتبر نیست.", "Bot token format is invalid.", "bad_bot_token");
+    }
+    const me = await telegramGetMe(token);
+    if (!me.ok) {
+      return fail(400, "تلگرام این توکن را نپذیرفت.", "Telegram rejected this token.", "bot_rejected");
+    }
+    return jsonResponse({ ok: true, username: me.result.username });
+  }
+
+  if (step === "tmdb/verify") {
+    const key = String(body.tmdbKey || "").trim();
+    if (!TMDB_KEY_RE.test(key)) {
+      return fail(400, "قالب کلید TMDB معتبر نیست (۳۲ کاراکتر هگز).", "TMDB key format is invalid (32 hex chars).", "bad_tmdb_key");
+    }
+    let data = null;
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/authentication?api_key=${key}`);
+      data = await res.json();
+    } catch (e) {
+      return fail(502, "ارتباط با TMDB برقرار نشد.", "Could not reach TMDB.", "tmdb_unreachable");
+    }
+    if (!data || !data.success) {
+      return fail(400, "TMDB این کلید را نپذیرفت.", "TMDB rejected this key.", "tmdb_rejected");
+    }
+    return jsonResponse({ ok: true });
+  }
+
+  if (step === "install/save") {
+    const botToken = String(body.botToken || "").trim();
+    const tmdbKey = String(body.tmdbKey || "").trim();
+    if (!BOT_TOKEN_RE.test(botToken)) {
+      return fail(400, "قالب توکن ربات معتبر نیست.", "Bot token format is invalid.", "bad_bot_token");
+    }
+    if (!TMDB_KEY_RE.test(tmdbKey)) {
+      return fail(400, "قالب کلید TMDB معتبر نیست.", "TMDB key format is invalid.", "bad_tmdb_key");
+    }
+    if (!env.DB) {
+      return fail(500, "دیتابیس D1 با نام DB به این Worker متصل نیست.", "No D1 database is bound as DB on this Worker.", "no_db");
+    }
+    if (!(await ensureSchema(env))) {
+      return fail(500, "ساخت جدول‌ها در D1 ناموفق بود.", "Creating the D1 tables failed.", "schema_failed");
+    }
+    const saved =
+      (await setSetting(env, "BOT_TOKEN", botToken)) &&
+      (await setSetting(env, "TMDB_KEY", tmdbKey)) &&
+      (await setSetting(env, "WORKER_ORIGIN", url.origin));
+    if (!saved) {
+      return fail(500, "ذخیرهٔ تنظیمات در D1 ناموفق بود.", "Saving the settings to D1 failed.", "save_failed");
+    }
+    let secret = await getSetting(env, "WEBHOOK_SECRET");
+    if (!secret) {
+      secret = generateRandomToken(32);
+      if (!(await setSetting(env, "WEBHOOK_SECRET", secret))) {
+        return fail(500, "ذخیرهٔ تنظیمات در D1 ناموفق بود.", "Saving the settings to D1 failed.", "save_failed");
+      }
+    }
+    return jsonResponse({ ok: true });
+  }
+
+  if (step === "install/webhook") {
+    const token = await getSetting(env, "BOT_TOKEN");
+    const secret = await getSetting(env, "WEBHOOK_SECRET");
+    if (!token || !secret) {
+      return fail(409, "ابتدا مرحلهٔ ذخیره باید انجام شود.", "Run the save step first.", "not_saved");
+    }
+    const me = await telegramGetMe(token);
+    if (!me.ok) {
+      return fail(502, "تلگرام توکن ذخیره‌شده را نپذیرفت.", "Telegram rejected the stored token.", "bot_rejected");
+    }
+    const webhookUrl = `${url.origin}/webhook`;
+    const hook = await tgCall(env, "setWebhook", {
+      url: webhookUrl,
+      allowed_updates: ["message", "callback_query"],
+      secret_token: secret,
+    });
+    if (!hook.ok) {
+      return fail(502, "ثبت وب‌هوک در تلگرام ناموفق بود.", "Telegram refused to register the webhook.", "webhook_failed");
+    }
+    return jsonResponse({ ok: true, webhookUrl, botUsername: me.result.username });
+  }
+
+  if (step === "install/commands") {
+    const res = await tgCall(env, "setMyCommands", {
+      commands: [
+        { command: "start", description: "🎬 شروع و جستجوی فیلم یا سریال" },
+        { command: "setchannel", description: "⚙️ تنظیم یا تغییر کانال خروجی" },
+        { command: "help", description: "📖 راهنمای کاربری" },
+        { command: "cancel", description: "❌ لغو عملیات فعلی" },
+      ],
+    });
+    if (!res.ok) {
+      return fail(502, "ثبت دستورات ربات ناموفق بود.", "Registering the bot commands failed.", "commands_failed");
+    }
+    return jsonResponse({ ok: true });
+  }
+
+  return fail(404, "مسیر پیدا نشد.", "Unknown setup step.", "not_found");
+}
+
+// ─── Entry point (fetch & scheduled) ──────────────────────────────────────────
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ۱. بررسی سلامت (Health Check) برای مانیتورینگ ۲۴ ساعته
-    if (url.pathname === "/health" || url.pathname === "/ping") {
-      return new Response(
-        JSON.stringify({
-          status: "healthy",
-          uptime: "24/7 serverless",
-          timestamp: Date.now(),
-          worker: "Arizo_Movie",
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    if (url.pathname === "/health") {
+      return jsonResponse({ status: "ok", worker: "Arizo_Movie" });
     }
 
-    // ۲. ویزارد راه‌اندازی تحت وب (/setup و صفحه اصلی /)
-    if (url.pathname === "/setup" || url.pathname === "/") {
-      const currentToken = await getSetting(env, "BOT_TOKEN");
-      const currentTmdb = await getSetting(env, "TMDB_KEY");
-      const currentAdmin = await getSetting(env, "ADMIN_ID");
-      const isConfigured = !!(currentToken && currentTmdb);
-
-      const html = renderSetupWizardHtml(url.origin, isConfigured, currentToken, currentTmdb, currentAdmin);
-      return new Response(html, {
+    if ((url.pathname === "/setup" || url.pathname === "/") && (request.method === "GET" || request.method === "HEAD")) {
+      return new Response(request.method === "HEAD" ? null : WIZARD_HTML, {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
-          "X-Frame-Options": "DENY",
-          "X-Content-Type-Options": "nosniff",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-          "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+          "Cache-Control": "no-store",
+          "Content-Security-Policy": WIZARD_CSP,
+          ...SECURITY_HEADERS,
         },
       });
     }
 
-    // ۳. API اعمال تنظیمات از طریق ویزارد (/api/setup/apply)
-    if (url.pathname === "/api/setup/apply" && request.method === "POST") {
+    if (url.pathname.startsWith("/api/setup/") && request.method === "POST") {
       try {
-        const body = await request.json();
-        const botToken = (body.bot_token || "").trim();
-        const tmdbKey = (body.tmdb_key || "").trim();
-        const adminId = (body.admin_id || "").trim();
-
-        if (botToken) await setSetting(env, "BOT_TOKEN", botToken);
-        if (tmdbKey) await setSetting(env, "TMDB_KEY", tmdbKey);
-        if (adminId) await setSetting(env, "ADMIN_ID", adminId);
-
-        // اطمینان از وجود جداول در D1
-        await ensureSchema(env);
-
-        // بررسی توکن تلگرام
-        const activeToken = await getSetting(env, "BOT_TOKEN");
-        if (!activeToken) {
-          return new Response(JSON.stringify({ ok: false, error: "توکن ربات تلگرام وارد نشده است." }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        const meRes = await tgCall(env, "getMe", {});
-        if (!meRes.ok) {
-          return new Response(JSON.stringify({ ok: false, error: `توکن تلگرام نامعتبر است: ${meRes.description}` }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        const botUsername = `@${meRes.result.username}`;
-        const botLink = `https://t.me/${meRes.result.username}`;
-
-        // ساخت توکن محرمانه سکرت وبهوک
-        let webhookSecret = await getSetting(env, "WEBHOOK_SECRET");
-        if (!webhookSecret) {
-          webhookSecret = generateRandomToken(32);
-          await setSetting(env, "WEBHOOK_SECRET", webhookSecret);
-        }
-
-        // ثبت وب‌هوک در سرورهای تلگرام
-        const webhookUrl = `${url.origin}/webhook`;
-        const setHookRes = await tgCall(env, "setWebhook", {
-          url: webhookUrl,
-          allowed_updates: ["message", "callback_query"],
-          secret_token: webhookSecret,
-          drop_pending_updates: false,
-        });
-
-        if (!setHookRes.ok) {
-          return new Response(
-            JSON.stringify({ ok: false, error: `ثبت وب‌هوک با خطا مواجه شد: ${setHookRes.description}` }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-          );
-        }
-
-        // تنظیم دستورات رسمی در BotFather
-        await tgCall(env, "setMyCommands", {
-          commands: [
-            { command: "start", description: "🎬 شروع و جستجوی فیلم یا سریال" },
-            { command: "setchannel", description: "⚙️ تنظیم یا تغییر کانال خروجی" },
-            { command: "help", description: "📖 راهنمای کاربری" },
-            { command: "cancel", description: "❌ لغو عملیات فعلی" },
-          ],
-        });
-
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            webhook_url: webhookUrl,
-            bot_username: botUsername,
-            bot_link: botLink,
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
+        return await handleSetupApi(request, env, url);
       } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
+        console.error("setup api crashed:", e);
+        return fail(500, "خطای داخلی سرور.", "Internal error.", "internal");
       }
     }
 
-    // ۴. وب‌هوک تلگرام (/webhook)
     if (url.pathname === "/webhook" && request.method === "POST") {
       const expectedSecret = await getSetting(env, "WEBHOOK_SECRET");
+      if (!expectedSecret) {
+        return new Response("Not configured", { status: 503 });
+      }
       const providedSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
-
-      if (expectedSecret && !timingSafeEqual(providedSecret, expectedSecret)) {
+      if (!timingSafeEqual(providedSecret, expectedSecret)) {
         return new Response("Unauthorized", { status: 401 });
       }
 
@@ -1675,33 +1443,40 @@ export default {
         return new Response("Bad Request", { status: 400 });
       }
 
-      // اجرای ناهمگام هندلر تا تلگرام بلافاصله پاسخ ۲۰۰ را دریافت کند
+      // Answer Telegram immediately; process the update in the background.
       ctx.waitUntil(
         handleUpdate(env, update).catch((err) => {
           console.error("handleUpdate unhandled error:", err);
         })
       );
-
       return new Response("OK", { status: 200 });
     }
 
     return new Response("Not Found", { status: 404 });
   },
 
-  // ۵. Cloudflare Cron Trigger (تضمین کارکرد ۲۴ ساعته و خودترمیمی وب‌هوک)
+  // Cron: if Telegram lost the webhook, register it again.
   async scheduled(event, env, ctx) {
-    const token = await getSetting(env, "BOT_TOKEN");
-    if (!token) return;
-
     ctx.waitUntil(
       (async () => {
         try {
+          const token = await getSetting(env, "BOT_TOKEN");
+          const secret = await getSetting(env, "WEBHOOK_SECRET");
+          const origin = await getSetting(env, "WORKER_ORIGIN");
+          if (!token || !secret || !origin) return;
+
+          const expectedUrl = `${origin}/webhook`;
           const info = await tgCall(env, "getWebhookInfo", {});
-          if (info.ok && (!info.result.url || info.result.has_custom_certificate)) {
-            console.warn("Webhook was dropped or missing, auto-restoring...");
+          if (info.ok && info.result.url !== expectedUrl) {
+            console.warn("Webhook missing or changed, registering it again");
+            await tgCall(env, "setWebhook", {
+              url: expectedUrl,
+              allowed_updates: ["message", "callback_query"],
+              secret_token: secret,
+            });
           }
         } catch (e) {
-          console.error("Cron check failed:", e);
+          console.error("Cron webhook check failed:", e);
         }
       })()
     );
