@@ -20,6 +20,10 @@
 
 <sub>https://arizo-owner.arizomovie.workers.dev/</sub>
 
+<br>
+
+**Try a live example bot:** [**@MSRMovieBot**](https://t.me/MSRMovieBot) &nbsp;·&nbsp; a sample bot run by the maintainer, so you can see how a movie bot like this feels before you install your own.
+
 </div>
 
 <img src="assets/divider.svg" alt="" width="100%">
@@ -31,6 +35,13 @@
 It runs on **Cloudflare Workers** with a **D1** database, so there is no server for you to rent, patch or keep alive. Telegram calls your Worker through a webhook whenever someone writes to the bot.
 
 <img src="assets/flow.svg" alt="Telegram to Worker to TMDB, D1 and your channel" width="100%">
+
+## See it in action
+
+Open **[@MSRMovieBot](https://t.me/MSRMovieBot)** in Telegram, press **Start** and type a movie or series name. It is a sample bot run by the maintainer; it is not necessarily running the latest release of this project.
+
+> [!NOTE]
+> The sample is a convenience, not a service. It may be restarted, changed or switched off at any time, and the channel features need a channel of your own. To get your own bot with your own channel and your own data, follow *Install in 3 steps* below.
 
 ## Features
 
