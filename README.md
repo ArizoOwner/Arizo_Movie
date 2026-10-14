@@ -45,6 +45,7 @@ It runs on **Cloudflare Workers** with a **D1** database, so there is no server 
 | 🧙 **Setup wizard** | Checks your tokens, creates the database, registers the webhook |
 | 🔄 **Webhook self-heal** | A cron re-registers the webhook if Telegram loses it |
 | ⬆️ **Updates from Telegram** | The owner presses a button, confirms, and the bot replaces its own file with the latest release (with rollback) |
+| 🛑 **Stop and remove** | The owner can switch the bot off and delete its data (and, with the token, its Worker and database) from Telegram |
 
 <img src="assets/divider.svg" alt="" width="100%">
 
@@ -111,6 +112,21 @@ Then open `/setup` on your Worker and sign in with that key.
 
 <img src="assets/divider.svg" alt="" width="100%">
 
+## Stopping and removing everything
+
+As the owner, press **🛑 Stop and remove the bot** in the menu (or send `/uninstall`). It lists exactly what will happen, then needs a second tap on a one-time button that is valid for 10 minutes.
+
+| | Updates from Telegram **on** (token stored) | **off** |
+|---|---|---|
+| Telegram webhook and command menu | removed | removed |
+| Bot data (tokens, channels, sessions) | database deleted | tables erased |
+| The Worker | deleted | stays; delete it in the Cloudflare dashboard |
+| An empty database | gone | stays; delete it in the dashboard |
+
+- **A database shared with another Worker is never deleted.** If any other Worker uses it, or that cannot be checked, the database is left alone, the screen says so, and the other bot loses its webhook too because both read the same token.
+- **Some things only you can do**, and the bot tells you: send `/deletebot` to [@BotFather](https://t.me/BotFather), delete the TMDB key in your TMDB account, revoke the Cloudflare token in the Cloudflare dashboard, and remove the bot from your channel's admins.
+- Removing the Worker by hand works too: delete the Worker, then its D1 database, then run `/deletebot`. Delete the Worker **first**, otherwise its 30-minute cron registers the webhook again.
+
 ## Commands
 
 | Command | What it does |
@@ -119,6 +135,8 @@ Then open `/setup` on your Worker and sign in with that key.
 | `/setchannel` | Choose or change the destination channel (`@public` or a private post link) |
 | `/help` | Short guide |
 | `/cancel` | Cancel the current action |
+| `/update` | Owner only: check for a newer release |
+| `/uninstall` | Owner only: stop the bot and remove its data |
 
 ## Security, honestly
 

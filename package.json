@@ -1,6 +1,6 @@
 {
   "name": "arizo-movie",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "24/7 Serverless Telegram Movie Bot running on Cloudflare Workers with D1 and Web Setup Wizard",
   "main": "worker.js",
   "scripts": {

@@ -40,10 +40,16 @@ Only the latest release running on the `main` branch receives security updates.
    - Nothing is installed without a tap on **Update**. The file is fetched only from the fixed GitHub release URL of the configured repository, size-limited, and refused if its embedded fingerprint (`BUILD_ID`) does not match its content. This detects truncation and accidental edits; it does **not** protect against a malicious release published from the repository itself, which is the trust you place in the maintainers.
    - The upload keeps every binding (`inherit`, strict) and the previous version stays available for rollback.
 
-6. **Input Sanitization & Output Encoding**:
+6. **Stop and Remove (owner only)**:
+   - Same owner-only, private-chat-only checks as updates, re-checked on every tap, plus a second tap on a random one-time code that is valid for 10 minutes and burned before anything is deleted.
+   - What will be touched is recomputed at confirmation time. If it differs from what the owner read (for example another Worker started using the database), nothing is deleted and the owner is asked again.
+   - A D1 database is deleted only if this Worker is its only user. If another Worker binds it, or that cannot be verified, the database is kept and the screen says so.
+   - The bot cannot revoke the bot token, TMDB key or Cloudflare token; it tells the owner to do that.
+
+7. **Input Sanitization & Output Encoding**:
    - All external movie titles, user messages, and API strings undergo strict HTML escaping (`escapeHtml`) prior to inclusion in Telegram message bodies or the web interface, preventing HTML injection and XSS.
 
-7. **Security Headers**:
+8. **Security Headers**:
    - The wizard is served with a strict Content-Security-Policy plus `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 
 ---

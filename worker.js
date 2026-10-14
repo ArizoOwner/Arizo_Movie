@@ -534,7 +534,12 @@ function getStartUI(channel, isOwnerUser = false) {
         },
         { text: "📖 راهنمای کاربری", callback_data: "help", style: "danger" },
       ],
-      ...(isOwnerUser ? [[{ text: "🔄 بررسی بروزرسانی", callback_data: "upd_check", style: "success" }]] : []),
+      ...(isOwnerUser
+        ? [
+            [{ text: "🔄 بررسی بروزرسانی", callback_data: "upd_check", style: "success" }],
+            [{ text: "🛑 توقف و حذف ربات", callback_data: "stop_ask", style: "danger" }],
+          ]
+        : []),
     ],
   };
 
@@ -601,6 +606,11 @@ async function handleMessage(env, message) {
   if (text === "/update") {
     if (!(await isOwner(env, message.from && message.from.id, message.chat.type))) return;
     return showUpdateCheck(env, chatId, null);
+  }
+
+  if (text === "/uninstall") {
+    if (!(await isOwner(env, message.from && message.from.id, message.chat.type))) return;
+    return showStopAsk(env, chatId, null);
   }
 
   if (text === "/help") {
@@ -947,6 +957,17 @@ async function handleCallbackQuery(env, cq) {
       ],
     };
     return sendMessage(env, chatId, cancelText, kb);
+  }
+
+  if (data.startsWith("stop_")) {
+    if (!(await isOwner(env, cq.from && cq.from.id, cq.message.chat.type))) {
+      return answerCallbackQuery(env, cq.id, "⛔️ این بخش فقط برای مالک ربات است.", true);
+    }
+    await answerCallbackQuery(env, cq.id);
+    if (data === "stop_ask") return showStopAsk(env, chatId, messageId);
+    const go = data.match(/^stop_go_([0-9a-f]{16})$/);
+    if (go) return performStop(env, chatId, messageId, go[1]);
+    return;
   }
 
   if (data === "help") {
@@ -1735,6 +1756,248 @@ async function announcePendingUpdate(env) {
   await setSetting(env, "UPDATE_CHAT", "");
 }
 
+// ─── Stop and remove the bot ──────────────────────────────────────────────────
+// Owner-only and two taps. Always: remove the Telegram webhook and command menu,
+// then erase the bot's data. With the stored Cloudflare token (opt-in) it also
+// deletes the D1 database and the Worker itself. It cannot revoke the bot token,
+// the TMDB key or the Cloudflare token: those stay valid until the owner revokes
+// them, and the final message says so.
+const STOP_CODE_TTL_MS = 10 * 60 * 1000;
+const STOP_MAX_NEIGHBOURS = 25;
+const OWN_TABLES = ["settings", "user_sessions", "user_channels", "post_history"];
+
+async function tgRaw(token, method, body) {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
+// What a removal would touch. The database is deleted only when this Worker is its
+// only user; if another Worker binds the same database, or that cannot be checked,
+// the database is left alone.
+async function planRemoval(env) {
+  const plan = { mode: "data", script: null, dbId: null, dbName: null, shared: null, neighbours: [], cfFailed: false };
+  const cfg = await getUpdateConfig(env);
+  if (!cfg) return plan;
+
+  const base = `/accounts/${cfg.accountId}/workers/scripts`;
+  const own = await cfFetch(cfg.token, `${base}/${cfg.script}/settings`);
+  if (!own.ok) {
+    plan.cfFailed = true;
+    return plan;
+  }
+  plan.mode = "full";
+  plan.script = cfg.script;
+
+  const binding = ((own.data.result && own.data.result.bindings) || []).find((b) => b.name === "DB" && b.type === "d1");
+  plan.dbId = binding && UUID_RE.test(String(binding.id || "")) ? binding.id : null;
+  if (!plan.dbId) {
+    plan.shared = "unknown";
+    return plan;
+  }
+
+  const [info, list] = await Promise.all([
+    cfFetch(cfg.token, `/accounts/${cfg.accountId}/d1/database/${plan.dbId}`),
+    cfFetch(cfg.token, base),
+  ]);
+  plan.dbName = info.ok && info.data.result ? info.data.result.name || null : null;
+  const others = list.ok ? (list.data.result || []).map((s) => s.id).filter((n) => n && n !== cfg.script) : null;
+  if (!others || others.length > STOP_MAX_NEIGHBOURS) {
+    plan.shared = "unknown";
+    return plan;
+  }
+  const checks = await Promise.all(
+    others.map(async (name) => {
+      const st = await cfFetch(cfg.token, `${base}/${name}/settings`);
+      if (!st.ok) return { name, unknown: true };
+      const uses = ((st.data.result && st.data.result.bindings) || []).some((b) => b.type === "d1" && b.id === plan.dbId);
+      return { name, uses };
+    })
+  );
+  plan.neighbours = checks.filter((c) => c.uses).map((c) => c.name);
+  plan.shared = checks.some((c) => c.unknown) ? "unknown" : plan.neighbours.length ? "yes" : "no";
+  return plan;
+}
+
+function planSignature(plan) {
+  return [plan.mode, plan.script || "", plan.dbId || "", plan.shared, plan.neighbours.join(",")].join("|");
+}
+
+const STOP_MANUAL =
+  "<b>این‌ها را فقط خودتان می‌توانید انجام دهید:</b>\n" +
+  "1️⃣ BotFather: دستور <code>/deletebot</code> (ربات و توکنش را کامل پاک می‌کند)\n" +
+  "2️⃣ TMDB: کلید API را از تنظیمات حساب حذف کنید\n" +
+  "3️⃣ Cloudflare: توکن API را باطل کنید (اگر بروزرسانی از داخل تلگرام را روشن کرده بودید)\n" +
+  "4️⃣ کانال: ربات را از ادمین‌ها بردارید";
+
+function stopSummary(plan) {
+  const lines = ["• وب‌هوک تلگرام و منوی دستورها پاک می‌شود؛ ربات دیگر به هیچ پیامی جواب نمی‌دهد."];
+  if (plan.mode === "full") {
+    const dbLabel = plan.dbName ? `<code>${escapeHtml(plan.dbName)}</code>` : "ربات";
+    if (plan.shared === "no") {
+      lines.push(`• دیتابیس ${dbLabel} با همهٔ داده‌هایش (توکن‌ها، کانال‌ها، سشن‌ها) حذف می‌شود.`);
+    } else if (plan.shared === "yes") {
+      lines.push(
+        `• ⚠️ دیتابیس ${dbLabel} حذف <b>نمی‌شود</b> چون Worker دیگری هم از آن استفاده می‌کند (${plan.neighbours
+          .map((n) => escapeHtml(n))
+          .join("، ")}). داده‌هایش، از جمله توکن ربات و کلید TMDB به‌صورت متن ساده، همان‌جا می‌ماند.`
+      );
+      lines.push("• ⚠️ آن Worker همین توکن ربات را از همان دیتابیس می‌خواند؛ پس با پاک شدن وب‌هوک، ربات او هم دیگر پیام نمی‌گیرد.");
+    } else {
+      lines.push(
+        `• ⚠️ دیتابیس ${dbLabel} حذف <b>نمی‌شود</b> چون نتوانستم مطمئن شوم Worker دیگری از آن استفاده نمی‌کند. داده‌هایش، از جمله توکن ربات و کلید TMDB به‌صورت متن ساده، همان‌جا می‌ماند.`
+      );
+    }
+    lines.push(`• خود Worker <code>${escapeHtml(plan.script)}</code> از Cloudflare حذف می‌شود.`);
+  } else {
+    lines.push(
+      "• همهٔ داده‌های ربات در دیتابیس (توکن ربات، کلید TMDB، کانال‌ها، سشن‌ها) پاک می‌شود. ⚠️ اگر Worker دیگری هم از همین دیتابیس استفاده کند، داده‌های آن هم پاک می‌شود."
+    );
+    lines.push(
+      plan.cfFailed
+        ? "• توکن Cloudflare ذخیره‌شده کار نکرد، پس خود Worker و دیتابیس خالی را باید در داشبورد Cloudflare پاک کنید."
+        : "• بروزرسانی از داخل تلگرام روشن نیست، پس خود Worker و دیتابیس خالی را باید در داشبورد Cloudflare پاک کنید."
+    );
+  }
+  return lines.join("\n");
+}
+
+async function showStopAsk(env, chatId, messageId, knownPlan, changed) {
+  const show = responder(env, chatId, messageId);
+  const plan = knownPlan || (await planRemoval(env));
+  const code = generateRandomToken(8);
+  const saved =
+    (await setSetting(env, "STOP_CODE", code)) &&
+    (await setSetting(env, "STOP_EXP", String(Date.now() + STOP_CODE_TTL_MS))) &&
+    (await setSetting(env, "STOP_PLAN", planSignature(plan)));
+  if (!saved) {
+    return show("⚠️ ذخیرهٔ وضعیت در دیتابیس ناموفق بود؛ دوباره امتحان کنید.", { inline_keyboard: [BACK_BUTTON] });
+  }
+  const text =
+    "🛑 <b>توقف و حذف ربات</b>\n\n" +
+    (changed ? "ℹ️ وضعیت از دفعهٔ قبل تغییر کرده؛ لطفاً دوباره بخوانید و تأیید کنید.\n\n" : "") +
+    "<b>با تأیید شما این کارها انجام می‌شود:</b>\n" +
+    stopSummary(plan) +
+    "\n\n" +
+    STOP_MANUAL +
+    "\n\n⚠️ <b>این کار برگشت‌پذیر نیست.</b> این تأیید ۱۰ دقیقه اعتبار دارد.";
+  return show(text, {
+    inline_keyboard: [
+      [{ text: "🗑 بله، متوقف و حذف کن", callback_data: `stop_go_${code}`, style: "danger" }],
+      [{ text: "❌ انصراف", callback_data: "back_to_start", style: "primary" }],
+    ],
+  });
+}
+
+async function wipeOwnTables(env) {
+  if (!env.DB) return false;
+  try {
+    await env.DB.batch(OWN_TABLES.map((t) => env.DB.prepare(`DROP TABLE IF EXISTS ${t}`)));
+    return true;
+  } catch (e) {
+    console.error("wipeOwnTables failed:", e);
+    return false;
+  }
+}
+
+async function performStop(env, chatId, messageId, code) {
+  const show = responder(env, chatId, messageId);
+
+  const storedCode = await getSetting(env, "STOP_CODE");
+  const exp = Number(await getSetting(env, "STOP_EXP")) || 0;
+  const storedPlan = await getSetting(env, "STOP_PLAN");
+  const matches = !!storedCode && (await safeEqual(code, storedCode));
+  if (!matches || Date.now() > exp) {
+    return show("⌛️ این تأیید منقضی شده یا قبلاً استفاده شده است.", {
+      inline_keyboard: [[{ text: "🛑 دوباره", callback_data: "stop_ask", style: "danger" }], BACK_BUTTON],
+    });
+  }
+  // single use: burn it before doing anything
+  await setSetting(env, "STOP_CODE", "");
+  await setSetting(env, "STOP_EXP", "0");
+
+  // The owner confirmed one specific plan; if what would be touched changed, ask again.
+  const plan = await planRemoval(env);
+  if (planSignature(plan) !== storedPlan) return showStopAsk(env, chatId, messageId, plan, true);
+
+  const botToken = await getSetting(env, "BOT_TOKEN");
+  const cfg = await getUpdateConfig(env);
+
+  // Keep the cron from putting the webhook back. Not written when the database may
+  // be shared: a flag there would also stop the other Worker.
+  if (plan.mode === "data" || plan.shared === "no") await setSetting(env, "STOPPED", "1");
+  await show("⏳ <b>در حال توقف و حذف…</b>\nاین پیام چند ثانیه دیگر به‌روز می‌شود.", { inline_keyboard: [] });
+
+  const lines = [];
+  if (botToken) {
+    const hook = await tgRaw(botToken, "deleteWebhook", { drop_pending_updates: true });
+    await tgRaw(botToken, "deleteMyCommands", {});
+    lines.push(
+      hook.ok
+        ? "✅ وب‌هوک تلگرام و منوی دستورها پاک شد."
+        : "⚠️ تلگرام حذف وب‌هوک را نپذیرفت (شاید توکن قبلاً باطل شده). با BotFather ربات را پاک کنید."
+    );
+  } else {
+    lines.push("ℹ️ توکن ربات در دیتابیس نبود، پس وب‌هوکی برای پاک کردن پیدا نشد.");
+  }
+
+  let deleteWorker = false;
+  if (plan.mode === "full" && cfg) {
+    if (plan.shared === "no" && plan.dbId) {
+      const del = await cfFetch(cfg.token, `/accounts/${cfg.accountId}/d1/database/${plan.dbId}`, { method: "DELETE" });
+      if (del.ok) {
+        lines.push("✅ دیتابیس حذف شد.");
+      } else {
+        const wiped = await wipeOwnTables(env);
+        lines.push(
+          wiped
+            ? `⚠️ حذف دیتابیس ناموفق بود (${escapeHtml(cfErrorText(del))}) ولی داده‌هایش پاک شد. دیتابیس خالی را در داشبورد Cloudflare حذف کنید.`
+            : `⚠️ نه حذف دیتابیس (${escapeHtml(cfErrorText(del))}) و نه پاک کردن داده‌ها انجام شد. حتماً توکن ربات را با BotFather باطل کنید.`
+        );
+      }
+    } else if (plan.shared === "yes") {
+      lines.push(`ℹ️ دیتابیس دست‌نخورده ماند چون Worker دیگری (${plan.neighbours.map((n) => escapeHtml(n)).join("، ")}) هم از آن استفاده می‌کند.`);
+    } else {
+      lines.push("ℹ️ دیتابیس دست‌نخورده ماند چون نتوانستم مطمئن شوم Worker دیگری از آن استفاده نمی‌کند.");
+    }
+    deleteWorker = true;
+  } else {
+    const wiped = await wipeOwnTables(env);
+    lines.push(wiped ? "✅ همهٔ داده‌های ربات پاک شد." : "⚠️ پاک کردن داده‌ها ناموفق بود. توکن ربات را با BotFather باطل کنید.");
+  }
+
+  const tail = deleteWorker
+    ? "⏳ حذف Worker شروع شد و تا چند ثانیه دیگر کامل می‌شود. اگر بعد از یک دقیقه آدرسش هنوز باز می‌شود، در داشبورد Cloudflare پاکش کنید."
+    : "ℹ️ خود Worker و دیتابیس خالی در Cloudflare مانده‌اند؛ آن‌ها را از داشبورد Cloudflare حذف کنید.";
+  const finalText = `🛑 <b>ربات متوقف شد.</b>\n\n${lines.join("\n")}\n${tail}\n\n${STOP_MANUAL}`;
+
+  // The data (and with it the stored token) may already be gone, so talk to Telegram
+  // with the token read above instead of through the database.
+  const say = async (text) => {
+    if (!botToken) return;
+    const base = { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true };
+    const edited = messageId ? await tgRaw(botToken, "editMessageText", { ...base, message_id: messageId }) : { ok: false };
+    if (!edited.ok) await tgRaw(botToken, "sendMessage", base);
+  };
+  await say(finalText);
+
+  if (deleteWorker) {
+    const res = await cfFetch(cfg.token, `/accounts/${cfg.accountId}/workers/scripts/${cfg.script}`, { method: "DELETE" });
+    if (!res.ok) {
+      await say(
+        `⚠️ <b>حذف Worker ناموفق بود:</b> ${escapeHtml(cfErrorText(res))}\nدر داشبورد Cloudflare، Worker «${escapeHtml(cfg.script)}» را دستی حذف کنید.\n\n${STOP_MANUAL}`
+      );
+    }
+  }
+}
+
 async function storeUpdateToken(auth) {
   const { cfToken, accountId, script } = auth;
   const base = `/accounts/${accountId}/workers/scripts/${script}/settings`;
@@ -2304,6 +2567,7 @@ export default {
     ctx.waitUntil(
       (async () => {
         try {
+          if ((await getSetting(env, "STOPPED")) === "1") return;
           const token = await getSetting(env, "BOT_TOKEN");
           const secret = await getSetting(env, "WEBHOOK_SECRET");
           const origin = await getSetting(env, "WORKER_ORIGIN");
