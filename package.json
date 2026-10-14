@@ -1,0 +1,26 @@
+{
+  "name": "arizo-movie",
+  "version": "2.0.0",
+  "description": "24/7 Serverless Telegram Movie Bot running on Cloudflare Workers with D1 and Web Setup Wizard",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:create": "wrangler d1 create arizo-movie-db",
+    "d1:init": "wrangler d1 execute arizo-movie-db --file=./schema.sql"
+  },
+  "keywords": [
+    "telegram-bot",
+    "cloudflare-workers",
+    "serverless",
+    "moviebot",
+    "tmdb",
+    "d1",
+    "telegram"
+  ],
+  "author": "ArizoOwner",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.114.0"
+  }
+}

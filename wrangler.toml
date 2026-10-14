@@ -1,0 +1,19 @@
+name = "arizo-movie"
+main = "worker.js"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── دیتابیس D1 برای ذخیره‌سازی سشن‌ها و تنظیمات ─────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "arizo-movie-db"
+database_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # با ساخت دیتابیس در کلادفلر این شناسه قرار می‌گیرد
+
+# ─── کرون‌جاب کلادفلر جهت تضمین پایداری ۲۴ ساعته و خودترمیمی ───────────────────
+[triggers]
+crons = ["*/30 * * * *"]
+
+# ─── متغیرهای محیطی عمومی (سکرت‌ها را در داشبورد یا ویزارد وب وارد کنید) ────────
+[vars]
+PROJECT_NAME = "Arizo_Movie"
+VERSION = "2.0.0"
