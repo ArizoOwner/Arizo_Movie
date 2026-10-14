@@ -604,7 +604,7 @@ async function handleMessage(env, message) {
       "مثال: <code>@MyMovieChannel</code>\n\n" +
       "📌 <b>روش دوم (کانال خصوصی):</b>\n" +
       "لینک یکی از پست‌های کانال خود را ارسال کنید:\n" +
-      "مثال: <code>https://t.me/c/2702725668/165</code>\n\n" +
+      "مثال: <code>https://t.me/c/1234567890/123</code>\n\n" +
       "⚠️ <i>الزام مهم: ربات حتماً باید در کانال شما عضو و ادمین با دسترسی ارسال پیام (Post Messages) باشد.</i>";
 
     const keyboard = {
@@ -945,7 +945,7 @@ async function handleCallbackQuery(env, cq) {
       "مثال: <code>@MyMovieChannel</code>\n\n" +
       "📌 <b>روش دوم (کانال خصوصی):</b>\n" +
       "لینک یکی از پست‌های کانال خود را ارسال کنید:\n" +
-      "مثال: <code>https://t.me/c/2702725668/165</code>\n\n" +
+      "مثال: <code>https://t.me/c/1234567890/123</code>\n\n" +
       "⚠️ <i>الزام مهم: ربات حتماً باید در کانال شما عضو و ادمین با دسترسی ارسال پیام (Post Messages) باشد.</i>";
 
     const kb = {
@@ -1041,7 +1041,7 @@ async function handleCallbackQuery(env, cq) {
       "پیام فایل یا ویدیو را از کانال خود به این ربات <b>Forward</b> کنید.\n\n" +
       "<b>2️⃣ ارسال لینک مستقیم:</b>\n" +
       "یا لینک مستقیم پیام کانال را ارسال فرمایید:\n" +
-      "🔗 <code>https://t.me/c/2702725668/165</code>";
+      "🔗 <code>https://t.me/c/1234567890/123</code>";
 
     const kb = {
       inline_keyboard: [
