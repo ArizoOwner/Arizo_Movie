@@ -12,30 +12,41 @@
 (function(){try{var t=localStorage.getItem('am_theme')||'dark';document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('am_lang')||'fa';document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='en'?'ltr':'rtl');}catch(e){}})();
 </script>
 <style>
-:root{--bg:#0a0a0f;--bg2:radial-gradient(circle at 15% 10%,rgba(220,38,38,.28),transparent 45%),radial-gradient(circle at 85% 85%,rgba(245,158,11,.18),transparent 45%);--card:rgba(22,22,32,.8);--card2:rgba(34,34,48,.65);--line:rgba(255,255,255,.09);--text:#f8fafc;--muted:#a1a1aa;--dim:#71717a;--acc:#ef4444;--acc2:#f59e0b;--green:#34d399;--amber:#fbbf24;--rose:#f87171;--blue:#60a5fa;--r:16px;--font:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',Consolas,monospace}
-[data-theme="light"]{--bg:#f6f4f1;--bg2:radial-gradient(circle at 15% 10%,rgba(239,68,68,.12),transparent 45%),radial-gradient(circle at 85% 85%,rgba(245,158,11,.12),transparent 45%);--card:rgba(255,255,255,.9);--card2:rgba(245,243,240,.95);--line:rgba(15,23,42,.1);--text:#18181b;--muted:#52525b;--dim:#71717a}
+:root{--bg:#0a0a0f;--bg2:radial-gradient(circle at 12% 8%,rgba(220,38,38,.30),transparent 42%),radial-gradient(circle at 88% 90%,rgba(245,158,11,.20),transparent 45%);--card:rgba(22,22,32,.82);--card2:rgba(34,34,48,.66);--line:rgba(255,255,255,.09);--text:#f8fafc;--muted:#a1a1aa;--dim:#71717a;--acc:#ef4444;--acc2:#f59e0b;--green:#34d399;--amber:#fbbf24;--rose:#f87171;--blue:#60a5fa;--r:16px;--font:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',Consolas,monospace}
+[data-theme="light"]{--bg:#f6f4f1;--bg2:radial-gradient(circle at 12% 8%,rgba(239,68,68,.13),transparent 42%),radial-gradient(circle at 88% 90%,rgba(245,158,11,.13),transparent 45%);--card:rgba(255,255,255,.92);--card2:rgba(245,243,240,.96);--line:rgba(15,23,42,.1);--text:#18181b;--muted:#52525b;--dim:#71717a}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);background-image:var(--bg2);background-attachment:fixed;color:var(--text);line-height:1.7;min-height:100vh;padding:24px 16px 56px}
 a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .wrap{max-width:760px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px}
-.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:24px;box-shadow:0 8px 24px rgba(239,68,68,.35)}
+.logo{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:25px;box-shadow:0 8px 24px rgba(239,68,68,.38);animation:float 3.4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-4px) rotate(-4deg)}}
 .brand h1{font-size:1.15rem;font-weight:800}.brand small{color:var(--muted);font-size:.78rem;display:block}
 .tools{display:flex;gap:8px}
 .chip{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:7px 14px;font:inherit;font-size:.8rem;cursor:pointer}
 .chip:hover{border-color:var(--acc)}
 .progress{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;margin:6px 0 18px}
-.progress i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--green));transition:width .4s}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.progress i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--green));background-size:200% 100%;animation:shine 3s linear infinite;transition:width .5s}
+@keyframes shine{to{background-position:-200% 0}}
+.notice{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;line-height:1.7;border:1px solid}
+.notice.req{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.1)}
+.notice.done{border-color:rgba(52,211,153,.45);background:rgba(52,211,153,.1)}
+.notice span{opacity:.85}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.18);animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
 .card h2{font-size:1.02rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .card p.lead{color:var(--muted);font-size:.86rem;margin-bottom:12px}
 .num{width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;display:inline-grid;place-items:center;font-size:.8rem;font-weight:800;flex:none}
 .steps{list-style:none;display:grid;gap:8px;margin:0 0 14px}
 .steps li{font-size:.86rem;color:var(--muted)}
 .steps b{color:var(--text)}
+.tabs{display:flex;gap:6px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
+.tab{flex:1;background:none;border:0;color:var(--muted);font:inherit;font-size:.84rem;font-weight:600;padding:9px 10px;border-radius:9px;cursor:pointer}
+.tab.on{background:linear-gradient(135deg,var(--acc),#b91c1c);color:#fff}
 label{display:block;font-size:.8rem;font-weight:600;margin:12px 0 6px}
 .field{position:relative}
+select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:.86rem;outline:none;direction:ltr;text-align:left}
 input[type=text],input[type=password]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:.86rem;outline:none;direction:ltr;text-align:left}
 input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(239,68,68,.18)}
 .field input{padding-right:44px}
@@ -52,6 +63,8 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 .log{list-style:none;display:grid;gap:8px}
 .log li{display:flex;gap:10px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:.86rem}
 .log .ic{width:22px;text-align:center;flex:none}
+.log li.run .ic{animation:spin 1.1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
 .log li.run .ic::before{content:'⏳'}.log li.done .ic::before{content:'✅'}.log li.fail .ic::before{content:'❌'}.log li.wait .ic::before{content:'○';color:var(--dim)}
 .log li.fail{border-color:rgba(248,113,113,.4)}
 .kv{display:grid;gap:10px;margin:14px 0}
@@ -60,11 +73,11 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 .kv code{font-family:var(--mono);font-size:.84rem;direction:ltr;overflow-wrap:anywhere;flex:1;text-align:left}
 .kv button{background:none;border:0;color:var(--blue);cursor:pointer;font:inherit;font-size:.78rem}
 .hidden{display:none!important}
-.warnbox{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:.82rem;margin-top:12px}
 .errbox{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);color:var(--rose);border-radius:12px;padding:12px 14px;font-size:.84rem;margin-top:12px;overflow-wrap:anywhere}
-.result{border-color:rgba(52,211,153,.35)}
+.result{border-color:rgba(52,211,153,.4)}
 footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
 @media(max-width:560px){.kv div{flex-wrap:wrap}.kv span{min-width:100%}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -79,17 +92,70 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
 
 <div class="progress"><i id="bar"></i></div>
 
+<div class="notice req hidden" id="reqBanner"><b data-t="reqTitle"></b><span data-t="reqText"></span></div>
+<div class="notice done hidden" id="doneBanner"><b data-t="doneBannerTitle"></b><span data-t="doneBannerText"></span></div>
+
+<section class="card hidden" id="inst">
+  <h2>🚀 <span data-t="iTitle"></span></h2>
+  <p class="lead" data-t="iLead"></p>
+  <ol class="steps">
+    <li>🔹 <span data-t="cf1"></span></li>
+    <li>🔹 <span data-t="cf2"></span></li>
+  </ol>
+  <a class="btn ghost" id="iCfLink" target="_blank" rel="noopener noreferrer" data-t="cfOpen"></a>
+  <label for="iToken" data-t="cfLabel"></label>
+  <div class="field"><input type="password" id="iToken" autocomplete="off" spellcheck="false" placeholder="Cloudflare API Token"><button class="eye" type="button" data-eye="iToken" aria-label="show">👁</button></div>
+  <div class="row"><button class="btn" id="iVerify" type="button" data-t="verify"></button></div>
+  <div class="status" id="iStatus"></div>
+  <div id="iAcctBox" class="hidden"><label for="iAcct" data-t="iAcct"></label><select id="iAcct"></select></div>
+  <div id="iSubBox" class="hidden">
+    <label for="iSub" data-t="iSubLabel"></label>
+    <div class="row" style="margin-top:0"><input type="text" id="iSub" placeholder="my-name" style="flex:1"><button class="btn ghost" id="iSubBtn" type="button" data-t="iSubBtn"></button></div>
+  </div>
+  <label for="iName" data-t="iName"></label>
+  <input type="text" id="iName" value="arizo-movie" maxlength="54">
+  <div class="row"><button class="btn big" id="iInstall" type="button" disabled data-t="iInstall"></button></div>
+  <div class="hint" data-t="iHint"></div>
+  <ul class="log hidden" id="iLog" style="margin-top:14px"></ul>
+  <div class="errbox hidden" id="iErr"></div>
+  <div class="hidden" id="iDone">
+    <p class="lead" style="margin-top:14px" data-t="iDoneLead"></p>
+    <div class="kv">
+      <div><span data-t="iUrl"></span><code id="iUrl"></code><button type="button" data-copy="iUrl" data-t="copy"></button></div>
+      <div><span data-t="iKey"></span><code id="iKey"></code><button type="button" data-copy="iKey" data-t="copy"></button></div>
+    </div>
+    <div class="errbox" style="background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.4);color:var(--amber)" data-t="iKeyWarn"></div>
+    <div class="row"><a class="btn" id="iOpen" href="#" target="_blank" rel="noopener noreferrer" data-t="iOpen"></a></div>
+  </div>
+</section>
+
 <section class="card" id="s1">
   <h2><span class="num">1</span><span data-t="s1title"></span></h2>
   <p class="lead" data-t="s1lead"></p>
-  <ol class="steps">
-    <li>🔹 <span data-t="s1a"></span></li>
-    <li>🔹 <span data-t="s1b"></span></li>
-  </ol>
-  <label for="setupKey" data-t="s1label"></label>
-  <div class="field"><input type="password" id="setupKey" autocomplete="off" spellcheck="false" placeholder="SETUP_KEY"><button class="eye" type="button" data-eye="setupKey" aria-label="show">👁</button></div>
-  <div class="row"><button class="btn" id="cfVerify" type="button" data-t="verify"></button></div>
-  <div class="status" id="cfStatus"></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" type="button" data-tab="cf" data-t="tabCf"></button>
+    <button class="tab" type="button" data-tab="key" data-t="tabKey"></button>
+  </div>
+
+  <div id="paneCf">
+    <ol class="steps">
+      <li>🔹 <span data-t="cf1"></span></li>
+      <li>🔹 <span data-t="cf2"></span></li>
+    </ol>
+    <a class="btn ghost" id="cfLink" target="_blank" rel="noopener noreferrer" data-t="cfOpen"></a>
+    <label for="cfToken" data-t="cfLabel"></label>
+    <div class="field"><input type="password" id="cfToken" autocomplete="off" spellcheck="false" placeholder="Cloudflare API Token"><button class="eye" type="button" data-eye="cfToken" aria-label="show">👁</button></div>
+  </div>
+
+  <div id="paneKey" class="hidden">
+    <p class="hint" data-t="keyHelp"></p>
+    <label for="setupKey" data-t="keyLabel"></label>
+    <div class="field"><input type="password" id="setupKey" autocomplete="off" spellcheck="false" placeholder="SETUP_KEY"><button class="eye" type="button" data-eye="setupKey" aria-label="show">👁</button></div>
+  </div>
+
+  <div class="row"><button class="btn" id="authVerify" type="button" data-t="verify"></button></div>
+  <div class="status" id="authStatus"></div>
 </section>
 
 <section class="card" id="s2">
@@ -104,7 +170,6 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
   <div class="field"><input type="password" id="tmdbKey" autocomplete="off" spellcheck="false" placeholder="TMDB API key (v3)"><button class="eye" type="button" data-eye="tmdbKey" aria-label="show">👁</button></div>
   <div class="row"><button class="btn ghost" id="tmdbVerify" type="button" data-t="verify" disabled></button><a class="btn ghost" href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API</a></div>
   <div class="status" id="tmdbStatus"></div>
-
 </section>
 
 <section class="card" id="s3">
@@ -130,43 +195,58 @@ footer{text-align:center;color:var(--dim);font-size:.76rem;margin-top:24px}
   <div class="row"><a class="btn" id="rOpen" href="#" target="_blank" rel="noopener noreferrer" data-t="openBot"></a></div>
 </section>
 
-<section class="card">
-  <h2>🚀 <span data-t="ghTitle"></span></h2>
-  <p class="lead" data-t="ghLead"></p>
-  <ol class="steps">
-    <li>🔹 <span data-t="gh1"></span></li>
-    <li>🔹 <span data-t="gh2"></span></li>
-  </ol>
-  <a class="btn ghost" href="https://github.com/ArizoOwner/Arizo_Movie" target="_blank" rel="noopener noreferrer" data-t="ghOpen"></a>
-</section>
-
 <footer>Arizo Movie · <span data-t="footer"></span></footer>
 </div>
 
 <script>
 (function(){
 'use strict';
+var CF_TOKEN_URL='https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys='+encodeURIComponent('[{"key":"workers_scripts","type":"edit"},{"key":"d1","type":"edit"},{"key":"account_settings","type":"read"}]')+'&accountId=*&zoneId=all&name='+encodeURIComponent('Arizo Movie Wizard');
 var T={
 fa:{
-s1title:'اثبات مالکیت (کلید راه‌اندازی)',s1lead:'برای اینکه فقط صاحب این Worker بتواند ربات را تنظیم کند، یک کلید راه‌اندازی (SETUP_KEY) لازم است. این کلید را خودتان می‌سازید و فقط در Cloudflare ذخیره می‌شود.',
-s1a:'یک متن تصادفی حداقل ۲۴ کاراکتری بسازید و در Cloudflare ← Workers ← این Worker ← Settings ← Variables and Secrets با نام SETUP_KEY و نوع Secret ذخیره کنید.',s1b:'همان متن را پایین وارد کنید. (جزئیات در README)',s1label:'کلید راه‌اندازی (SETUP_KEY)',verify:'بررسی',
+iTitle:'نصب ربات روی Cloudflare خودتان',iLead:'این صفحه یک نسخه از ربات را در اکانت Cloudflare خودِ شما می‌سازد. توکن شما فقط برای همین نصب استفاده می‌شود و جایی ذخیره نمی‌شود.',
+iAcct:'اکانت Cloudflare',iSubLabel:'اکانت جدید است؛ یک نام برای آدرس workers.dev انتخاب کنید',iSubBtn:'ثبت نام',iName:'نام Worker',iInstall:'☁️ نصب روی اکانت من',
+iHint:'پس از نصب، یک آدرس و یک کلید راه‌اندازی می‌گیرید و ادامهٔ کار روی Worker خودتان انجام می‌شود.',
+iDoneLead:'نصب انجام شد. ادامهٔ کار (توکن ربات و کلید TMDB) روی Worker خودتان است.',iUrl:'آدرس Worker شما',iKey:'کلید راه‌اندازی',iKeyWarn:'⚠️ این کلید فقط همین یک بار نمایش داده می‌شود. آن را همین حالا کپی کنید؛ برای ادامه لازم است.',iOpen:'🚀 ادامه روی Worker من',
+iSteps:{resources:'ساخت دیتابیس D1',deploy:'آپلود Worker و فعال‌سازی',wait:'منتظر بالا آمدن Worker'},iPickAcct:'اکانتی با دسترسی کافی پیدا نشد؛ دسترسی‌های Workers Scripts: Edit و D1: Edit را بررسی کنید.',iNoSub:'برای ادامه یک نام workers.dev انتخاب کنید.',iWait:'Worker ساخته شد ولی هنوز در دسترس نیست؛ چند ثانیه بعد آدرس را دستی باز کنید.',
+reqTitle:'⚠️ راه‌اندازی اجباری است',reqText:'تا این مراحل کامل نشود ربات فعال نیست و به هیچ پیامی جواب نمی‌دهد.',
+doneBannerTitle:'✅ ربات نصب شده است',doneBannerText:'اگر می‌خواهید توکن‌ها را عوض کنید، دوباره مراحل را انجام دهید.',
+s1title:'اثبات مالکیت Worker',s1lead:'فقط صاحب این Worker می‌تواند ربات را تنظیم کند. توکن فقط در همین نشست استفاده می‌شود و ذخیره نمی‌شود.',
+tabCf:'توکن Cloudflare (پیشنهادی)',tabKey:'کلید راه‌اندازی',
+cf1:'با دکمهٔ زیر صفحهٔ ساخت توکن را باز کنید؛ دسترسی‌های لازم از قبل انتخاب شده‌اند.',cf2:'Continue to summary و بعد Create Token را بزنید و توکن را کپی کنید.',
+cfOpen:'🔑 ساخت توکن Cloudflare',cfLabel:'توکن Cloudflare',
+keyHelp:'برای نصب با wrangler: دستور npx wrangler secret put SETUP_KEY را اجرا کنید و همان مقدار را اینجا بزنید (حداقل ۲۴ کاراکتر).',keyLabel:'کلید راه‌اندازی (SETUP_KEY)',
+verify:'بررسی',
 s2title:'اطلاعات ربات',s2lead:'این مقادیر در دیتابیس D1 خودِ شما ذخیره می‌شوند و داخل کد قرار نمی‌گیرند.',
 botLabel:'توکن ربات تلگرام',tmdbLabel:'کلید API سایت TMDB',
-s3title:'نصب',install:'☁️ نصب و فعال‌سازی',hint:'کلید راه‌اندازی فقط در همین صفحه استفاده می‌شود و ذخیره نمی‌شود.',progress:'در حال نصب…',retry:'🔁 تلاش دوباره',
-done:'نصب کامل شد',doneLead:'ربات فعال است. در تلگرام /start را بزنید.',kvBot:'ربات',kvHook:'وب‌هوک',copy:'کپی',openBot:'🚀 باز کردن ربات',
-ghTitle:'استقرار خودکار با GitHub Actions',ghLead:'اختیاری: با هر تغییر در ریپو، Worker خودکار دیپلوی می‌شود (نیاز به ریپوی شخصی شما).',gh1:'در ریپوی خود: Settings ← Secrets and variables ← Actions',gh2:'دو سکرت CLOUDFLARE_API_TOKEN (با دسترسی Edit برای Workers و D1) و CLOUDFLARE_ACCOUNT_ID را اضافه کنید.',ghOpen:'📦 ریپوی پروژه',footer:'توکن‌ها ذخیره نمی‌شوند',
-cfOk:'کلید تأیید شد',botOk:'ربات تأیید شد: ',tmdbOk:'کلید TMDB معتبر است',
-steps:['ذخیره تنظیمات و ساخت جدول‌ها','ثبت وب‌هوک تلگرام','ثبت دستورات ربات'],net:'ارتباط با سرور برقرار نشد',badResp:'پاسخ نامعتبر از سرور'},
+s3title:'نصب',install:'☁️ نصب و فعال‌سازی',hint:'ویزارد دیتابیس را می‌سازد، تنظیمات را ذخیره می‌کند و وب‌هوک را ثبت می‌کند.',progress:'در حال نصب…',retry:'🔁 تلاش دوباره',
+done:'نصب کامل شد',doneLead:'ربات فعال است. در تلگرام /start را بزنید.',kvBot:'ربات',kvHook:'وب‌هوک',copy:'کپی',openBot:'🚀 باز کردن ربات',footer:'توکن‌ها ذخیره نمی‌شوند',
+cfOk:'تأیید شد؛ این اکانت صاحب Worker است',keyOk:'کلید تأیید شد',botOk:'ربات تأیید شد: ',tmdbOk:'کلید TMDB معتبر است',
+noCfHere:'توکن Cloudflare فقط روی آدرس workers.dev کار می‌کند؛ از «کلید راه‌اندازی» استفاده کنید.',
+steps:{database:'ساخت و اتصال دیتابیس D1',save:'ذخیره تنظیمات و ساخت جدول‌ها',webhook:'ثبت وب‌هوک تلگرام',commands:'ثبت دستورات ربات',schedule:'زمان‌بندی بررسی وب‌هوک'},
+net:'ارتباط با سرور برقرار نشد',badResp:'پاسخ نامعتبر از سرور',dbWait:'دیتابیس وصل شد اما هنوز فعال نشده؛ چند ثانیه بعد دوباره امتحان کنید.'},
 en:{
-s1title:'Prove ownership (setup key)',s1lead:'Only the owner of this Worker may configure the bot, so a setup key (SETUP_KEY) is required. You create it yourself and it is stored only in Cloudflare.',
-s1a:'Generate a random string of at least 24 characters and save it in Cloudflare → Workers → this Worker → Settings → Variables and Secrets as SETUP_KEY (type: Secret).',s1b:'Enter the same string below. (Details in the README)',s1label:'Setup key (SETUP_KEY)',verify:'Verify',
+iTitle:'Install the bot on your own Cloudflare',iLead:'This page creates a copy of the bot in your own Cloudflare account. Your token is used only for this install and is never stored.',
+iAcct:'Cloudflare account',iSubLabel:'New account — pick a name for your workers.dev address',iSubBtn:'Save name',iName:'Worker name',iInstall:'☁️ Install on my account',
+iHint:'After the install you get an address and a setup key, and you continue on your own Worker.',
+iDoneLead:'Installed. The rest (bot token and TMDB key) happens on your own Worker.',iUrl:'Your Worker address',iKey:'Setup key',iKeyWarn:'⚠️ This key is shown only once. Copy it now; you need it to continue.',iOpen:'🚀 Continue on my Worker',
+iSteps:{resources:'Create the D1 database',deploy:'Upload and enable the Worker',wait:'Wait for the Worker to come up'},iPickAcct:'No account with enough access was found; check the Workers Scripts: Edit and D1: Edit permissions.',iNoSub:'Choose a workers.dev name to continue.',iWait:'The Worker was created but is not reachable yet; open the address manually in a few seconds.',
+reqTitle:'⚠️ Setup is required',reqText:'Until these steps are finished the bot is inactive and will not answer any message.',
+doneBannerTitle:'✅ The bot is installed',doneBannerText:'To change the tokens, run the steps again.',
+s1title:'Prove Worker ownership',s1lead:'Only the owner of this Worker can configure the bot. The token is used in this session only and is never stored.',
+tabCf:'Cloudflare token (recommended)',tabKey:'Setup key',
+cf1:'Open the token page with the button below; the required permissions are pre-selected.',cf2:'Click Continue to summary, then Create Token, and copy the token.',
+cfOpen:'🔑 Create Cloudflare token',cfLabel:'Cloudflare token',
+keyHelp:'For wrangler installs: run npx wrangler secret put SETUP_KEY and enter the same value here (at least 24 characters).',keyLabel:'Setup key (SETUP_KEY)',
+verify:'Verify',
 s2title:'Bot details',s2lead:'These values are stored in your own D1 database, never in the source code.',
 botLabel:'Telegram bot token',tmdbLabel:'TMDB API key',
-s3title:'Install',install:'☁️ Install & activate',hint:'The setup key is only used on this page and is never stored.',progress:'Installing…',retry:'🔁 Retry',
-done:'Installation complete',doneLead:'The bot is live. Send /start in Telegram.',kvBot:'Bot',kvHook:'Webhook',copy:'Copy',openBot:'🚀 Open the bot',
-ghTitle:'Automatic deploys with GitHub Actions',ghLead:'Optional: every push to the repo redeploys the Worker automatically.',gh1:'In your repo: Settings → Secrets and variables → Actions',gh2:'Add two secrets: CLOUDFLARE_API_TOKEN (Edit access for Workers and D1) and CLOUDFLARE_ACCOUNT_ID.',ghOpen:'📦 Project repository',footer:'tokens are never stored',
-cfOk:'Key accepted',botOk:'Bot confirmed: ',tmdbOk:'TMDB key is valid',
-steps:['Save settings and create tables','Register Telegram webhook','Register bot commands'],net:'Could not reach the server',badResp:'Invalid server response'}
+s3title:'Install',install:'☁️ Install & activate',hint:'The wizard creates the database, saves the settings and registers the webhook.',progress:'Installing…',retry:'🔁 Retry',
+done:'Installation complete',doneLead:'The bot is live. Send /start in Telegram.',kvBot:'Bot',kvHook:'Webhook',copy:'Copy',openBot:'🚀 Open the bot',footer:'tokens are never stored',
+cfOk:'Confirmed; this account owns the Worker',keyOk:'Key accepted',botOk:'Bot confirmed: ',tmdbOk:'TMDB key is valid',
+noCfHere:'A Cloudflare token only works on a workers.dev address; use the setup key instead.',
+steps:{database:'Create and bind the D1 database',save:'Save settings and create tables',webhook:'Register Telegram webhook',commands:'Register bot commands',schedule:'Schedule the webhook check'},
+net:'Could not reach the server',badResp:'Invalid server response',dbWait:'The database is bound but not active yet; try again in a few seconds.'}
 };
 var lang=document.documentElement.getAttribute('lang')==='en'?'en':'fa';
 function $(id){return document.getElementById(id)}
@@ -176,16 +256,92 @@ function applyLang(){
   for(var i=0;i<n.length;i++){var v=T[lang][n[i].getAttribute('data-t')];if(typeof v==='string')n[i].textContent=v;}
   $('langBtn').textContent=lang==='en'?'فارسی':'English';
   try{localStorage.setItem('am_lang',lang)}catch(e){}
+  renderLog();
 }
 function applyTheme(t){document.documentElement.setAttribute('data-theme',t);$('themeBtn').textContent=t==='light'?'🌙':'☀️';try{localStorage.setItem('am_theme',t)}catch(e){}}
 $('langBtn').onclick=function(){lang=lang==='en'?'fa':'en';applyLang();};
 $('themeBtn').onclick=function(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');};
-applyTheme(document.documentElement.getAttribute('data-theme')||'dark');applyLang();
+$('cfLink').href=CF_TOKEN_URL;$('iCfLink').href=CF_TOKEN_URL;
 
 var eyes=document.querySelectorAll('[data-eye]');
 for(var e=0;e<eyes.length;e++){eyes[e].onclick=function(){var i=$(this.getAttribute('data-eye'));i.type=i.type==='password'?'text':'password';};}
 
-var S={cf:false,bot:null,tmdb:false,busy:false,bar:4};
+var S={mode:'cf',auth:false,bot:null,tmdb:false,busy:false,bar:4,info:{configured:false,hasDb:false,hasKey:false,canUseToken:true}};
+var STEP_STATE={},STEP_IDS=[];
+var I={ok:false,accountId:'',subdomain:'',busy:false,list:[]};
+function iApi(step,body){
+  return fetch('/api/installer/'+step,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})})
+    .then(function(r){return r.json().catch(function(){return {ok:false,fa:T.fa.badResp,en:T.en.badResp}})})
+    .catch(function(){return {ok:false,fa:T.fa.net,en:T.en.net}});
+}
+function iRefresh(){
+  var okName=/^[a-z0-9][a-z0-9-]{0,53}$/.test($('iName').value);
+  $('iInstall').disabled=!(I.ok&&I.accountId&&I.subdomain&&okName)||I.busy;
+}
+function iFillAccounts(list){
+  var sel=$('iAcct');sel.innerHTML='';var usable=[];
+  for(var i=0;i<list.length;i++){
+    if(!list[i].canWorkers||!list[i].canD1)continue;
+    usable.push(list[i]);var o=document.createElement('option');o.value=list[i].id;o.textContent=list[i].name;sel.appendChild(o);
+  }
+  return usable;
+}
+function iPick(acc){I.accountId=acc.id;I.subdomain=acc.subdomain||'';$('iSubBox').classList.toggle('hidden',!!I.subdomain);iRefresh();}
+$('iName').oninput=function(){this.value=this.value.toLowerCase();iRefresh();};
+$('iAcct').onchange=function(){var a=I.list.filter(function(x){return x.id===$('iAcct').value})[0];if(a)iPick(a);};
+$('iVerify').onclick=function(){
+  var b=this,tk=$('iToken').value.trim();if(!tk)return;b.disabled=true;setStatus('iStatus','','…');
+  iApi('verify',{cfToken:tk}).then(function(d){
+    b.disabled=false;
+    if(!d.ok){I.ok=false;setStatus('iStatus','bad','❌ '+msgOf(d));iRefresh();return;}
+    I.list=iFillAccounts(d.accounts);
+    if(!I.list.length){I.ok=false;setStatus('iStatus','bad','❌ '+T[lang].iPickAcct);iRefresh();return;}
+    I.ok=true;$('iAcctBox').classList.toggle('hidden',I.list.length<2);iPick(I.list[0]);
+    setStatus('iStatus',I.subdomain?'ok':'warn',I.subdomain?'✅ '+I.subdomain+'.workers.dev':'⚠️ '+T[lang].iNoSub);
+  });
+};
+$('iSubBtn').onclick=function(){
+  var name=$('iSub').value.trim().toLowerCase();if(!name)return;
+  iApi('subdomain',{cfToken:$('iToken').value.trim(),accountId:I.accountId,subdomain:name}).then(function(d){
+    if(!d.ok){setStatus('iStatus','bad','❌ '+msgOf(d));return;}
+    I.subdomain=d.subdomain;$('iSubBox').classList.add('hidden');setStatus('iStatus','ok','✅ '+d.subdomain+'.workers.dev');iRefresh();
+  });
+};
+function iLog(state){
+  var ul=$('iLog');ul.classList.remove('hidden');ul.innerHTML='';
+  ['resources','deploy','wait'].forEach(function(id){
+    var li=document.createElement('li');li.className=state[id]||'wait';
+    var ic=document.createElement('span');ic.className='ic';var tx=document.createElement('span');tx.textContent=T[lang].iSteps[id];
+    li.appendChild(ic);li.appendChild(tx);ul.appendChild(li);
+  });
+}
+function iFail(state,id,d){state[id]='fail';iLog(state);$('iErr').classList.remove('hidden');$('iErr').textContent='❌ '+msgOf(d);I.busy=false;iRefresh();}
+function pollHealth(url,n){
+  return fetch(url+'/health',{cache:'no-store'}).then(function(r){return r.ok}).catch(function(){return false}).then(function(ok){
+    if(ok)return true;if(n>=25)return false;
+    return new Promise(function(r){setTimeout(r,2000)}).then(function(){return pollHealth(url,n+1)});
+  });
+}
+$('iInstall').onclick=function(){
+  I.busy=true;iRefresh();$('iErr').classList.add('hidden');$('iDone').classList.add('hidden');
+  var tk=$('iToken').value.trim(),name=$('iName').value.trim(),st={};iLog(st);
+  st.resources='run';iLog(st);
+  iApi('resources',{cfToken:tk,accountId:I.accountId,workerName:name}).then(function(r){
+    if(!r.ok){iFail(st,'resources',r);return;}
+    st.resources='done';st.deploy='run';iLog(st);
+    return iApi('deploy',{cfToken:tk,accountId:I.accountId,workerName:name,dbId:r.dbId}).then(function(d){
+      if(!d.ok){iFail(st,'deploy',d);return;}
+      st.deploy='done';st.wait='run';iLog(st);
+      return pollHealth(d.url,0).then(function(up){
+        st.wait=up?'done':'fail';iLog(st);
+        $('iUrl').textContent=d.url;$('iKey').textContent=d.setupKey;$('iOpen').href=d.url+'/setup';
+        if(!up){$('iErr').classList.remove('hidden');$('iErr').textContent='⚠️ '+T[lang].iWait;}
+        $('iToken').value='';$('iDone').classList.remove('hidden');$('iDone').scrollIntoView({behavior:'smooth',block:'center'});
+        I.busy=false;
+      });
+    });
+  });
+};
 function setStatus(id,cls,msg){var el=$(id);el.className='status '+cls;el.textContent=msg;}
 function msgOf(d){return (d&&(lang==='en'?d.en:d.fa))||(d&&d.en)||'Error';}
 function api(step,body){
@@ -193,82 +349,117 @@ function api(step,body){
     .then(function(r){return r.json().catch(function(){return {ok:false,fa:T.fa.badResp,en:T.en.badResp}})})
     .catch(function(){return {ok:false,fa:T.fa.net,en:T.en.net}});
 }
-function cf(){return $('setupKey').value.trim();}
+function getStatus(){
+  return fetch('/api/setup/status',{cache:'no-store'}).then(function(r){return r.json()}).catch(function(){return null});
+}
+function creds(){return S.mode==='cf'?{cfToken:$('cfToken').value.trim()}:{setupKey:$('setupKey').value.trim()};}
+function withCreds(o){var c=creds(),k;for(k in c)o[k]=c[k];return o;}
+
 function refresh(){
-  $('botVerify').disabled=!(S.cf&&$('botToken').value.trim());
-  $('tmdbVerify').disabled=!(S.cf&&$('tmdbKey').value.trim());
-  $('install').disabled=!(S.cf&&S.bot&&S.tmdb)||S.busy;
-  var n=(S.cf?1:0)+(S.bot?1:0)+(S.tmdb?1:0);
+  $('botVerify').disabled=!(S.auth&&$('botToken').value.trim());
+  $('tmdbVerify').disabled=!(S.auth&&$('tmdbKey').value.trim());
+  $('install').disabled=!(S.auth&&S.bot&&S.tmdb)||S.busy;
+  var n=(S.auth?1:0)+(S.bot?1:0)+(S.tmdb?1:0);
   $('bar').style.width=(S.bar>4?S.bar:(n===0?4:n===1?30:n===2?55:75))+'%';
 }
 $('botToken').oninput=function(){S.bot=null;refresh();};
 $('tmdbKey').oninput=function(){S.tmdb=false;refresh();};
 
-$('cfVerify').onclick=function(){
-  var tk=cf();if(!tk)return;var b=this;b.disabled=true;setStatus('cfStatus','','…');
-  api('key/verify',{setupKey:tk}).then(function(d){
-    b.disabled=false;S.cf=!!d.ok;
-    setStatus('cfStatus',d.ok?'ok':'bad',(d.ok?'✅ '+T[lang].cfOk:'❌ '+msgOf(d)));
+function setMode(m){
+  S.mode=m;S.auth=false;
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.toggle('on',tabs[i].getAttribute('data-tab')===m);
+  $('paneCf').classList.toggle('hidden',m!=='cf');$('paneKey').classList.toggle('hidden',m!=='key');
+  setStatus('authStatus','','');refresh();
+}
+var tabEls=document.querySelectorAll('.tab');
+for(var t=0;t<tabEls.length;t++){tabEls[t].onclick=function(){setMode(this.getAttribute('data-tab'));};}
+
+$('authVerify').onclick=function(){
+  var b=this;b.disabled=true;setStatus('authStatus','','…');
+  api(S.mode==='cf'?'cloudflare/verify':'key/verify',withCreds({})).then(function(d){
+    b.disabled=false;S.auth=!!d.ok;
+    setStatus('authStatus',d.ok?'ok':'bad',d.ok?'✅ '+(S.mode==='cf'?T[lang].cfOk:T[lang].keyOk):'❌ '+msgOf(d));
     refresh();
   });
 };
 $('botVerify').onclick=function(){
   var b=this;b.disabled=true;setStatus('botStatus','','…');
-  api('telegram/verify',{setupKey:cf(),botToken:$('botToken').value.trim()}).then(function(d){
+  api('telegram/verify',withCreds({botToken:$('botToken').value.trim()})).then(function(d){
     S.bot=d.ok?d.username:null;
     setStatus('botStatus',d.ok?'ok':'bad',d.ok?'✅ '+T[lang].botOk+'@'+d.username:'❌ '+msgOf(d));refresh();
   });
 };
 $('tmdbVerify').onclick=function(){
   var b=this;b.disabled=true;setStatus('tmdbStatus','','…');
-  api('tmdb/verify',{setupKey:cf(),tmdbKey:$('tmdbKey').value.trim()}).then(function(d){
+  api('tmdb/verify',withCreds({tmdbKey:$('tmdbKey').value.trim()})).then(function(d){
     S.tmdb=!!d.ok;
     setStatus('tmdbStatus',d.ok?'ok':'bad',d.ok?'✅ '+T[lang].tmdbOk:'❌ '+msgOf(d));refresh();
   });
 };
 
-var INSTALL_STEPS=['save','webhook','commands'];
-function renderLog(state){
-  var ul=$('log');ul.innerHTML='';
-  for(var i=0;i<INSTALL_STEPS.length;i++){
-    var li=document.createElement('li');li.className=state[INSTALL_STEPS[i]]||'wait';
+function renderLog(){
+  var ul=$('log');if(!ul)return;ul.innerHTML='';
+  for(var i=0;i<STEP_IDS.length;i++){
+    var li=document.createElement('li');li.className=STEP_STATE[STEP_IDS[i]]||'wait';
     var ic=document.createElement('span');ic.className='ic';
-    var tx=document.createElement('span');tx.textContent=T[lang].steps[i];
+    var tx=document.createElement('span');tx.textContent=T[lang].steps[STEP_IDS[i]];
     li.appendChild(ic);li.appendChild(tx);ul.appendChild(li);
   }
 }
-function fail(id,state,d){
-  state[id]='fail';renderLog(state);
+function fail(id,d){
+  STEP_STATE[id]='fail';renderLog();
   $('errBox').classList.remove('hidden');$('errBox').textContent='❌ '+msgOf(d);
   $('retryRow').classList.remove('hidden');S.busy=false;refresh();
+}
+function waitForDb(n){
+  return getStatus().then(function(s){
+    if(s&&s.hasDb)return true;
+    if(n>=15)return false;
+    return new Promise(function(r){setTimeout(r,1500)}).then(function(){return waitForDb(n+1)});
+  });
 }
 function install(){
   S.busy=true;refresh();
   $('progressCard').classList.remove('hidden');$('resultCard').classList.add('hidden');
   $('errBox').classList.add('hidden');$('retryRow').classList.add('hidden');
-  var state={};renderLog(state);
-  var base={setupKey:cf(),botToken:$('botToken').value.trim(),tmdbKey:$('tmdbKey').value.trim()};
-  var result={};
-  function run(i){
-    if(i>=INSTALL_STEPS.length)return Promise.resolve(true);
-    var id=INSTALL_STEPS[i];state[id]='run';renderLog(state);S.bar=30+i*20;refresh();
-    return api('install/'+id,base).then(function(d){
-      if(!d.ok){fail(id,state,d);return false;}
-      if(d.webhookUrl)result.hook=d.webhookUrl;
-      if(d.botUsername)result.bot=d.botUsername;
-      state[id]='done';renderLog(state);return run(i+1);
+  $('progressCard').scrollIntoView({behavior:'smooth',block:'start'});
+  getStatus().then(function(s){
+    if(s)S.info=s;
+    STEP_IDS=[];
+    if(!S.info.hasDb)STEP_IDS.push('database');
+    STEP_IDS.push('save','webhook','commands');
+    if(S.mode==='cf')STEP_IDS.push('schedule');
+    STEP_STATE={};renderLog();
+    var base=withCreds({botToken:$('botToken').value.trim(),tmdbKey:$('tmdbKey').value.trim()});
+    var result={};
+    function run(i){
+      if(i>=STEP_IDS.length)return Promise.resolve(true);
+      var id=STEP_IDS[i];STEP_STATE[id]='run';renderLog();S.bar=25+Math.round(i*70/STEP_IDS.length);refresh();
+      return api('install/'+id,base).then(function(d){
+        if(!d.ok){fail(id,d);return false;}
+        if(d.webhookUrl)result.hook=d.webhookUrl;
+        if(d.botUsername)result.bot=d.botUsername;
+        if(id==='database'&&!d.skipped){
+          return waitForDb(0).then(function(ready){
+            if(!ready){fail(id,{fa:T.fa.dbWait,en:T.en.dbWait});return false;}
+            STEP_STATE[id]='done';renderLog();return run(i+1);
+          });
+        }
+        STEP_STATE[id]='done';renderLog();return run(i+1);
+      });
+    }
+    return run(0).then(function(ok){
+      if(!ok)return;
+      S.bar=100;refresh();
+      $('rBot').textContent='@'+(result.bot||S.bot);$('rHook').textContent=result.hook||'';
+      $('rOpen').href='https://t.me/'+encodeURIComponent(result.bot||S.bot);
+      $('progressCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
+      $('reqBanner').classList.add('hidden');$('doneBanner').classList.remove('hidden');
+      $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+      $('cfToken').value='';$('setupKey').value='';$('botToken').value='';$('tmdbKey').value='';
+      S.busy=false;
     });
-  }
-  run(0).then(function(ok){
-    if(!ok)return;
-    S.bar=100;refresh();
-    $('rBot').textContent='@'+(result.bot||S.bot);$('rHook').textContent=result.hook||'';
-    $('rOpen').href='https://t.me/'+encodeURIComponent(result.bot||S.bot);
-    $('progressCard').classList.add('hidden');$('resultCard').classList.remove('hidden');
-    $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
-    // the secrets are no longer needed in the page
-    $('setupKey').value='';$('botToken').value='';$('tmdbKey').value='';
-    S.busy=false;
   });
 }
 $('install').onclick=install;$('retry').onclick=install;
@@ -276,6 +467,21 @@ $('install').onclick=install;$('retry').onclick=install;
 var cps=document.querySelectorAll('[data-copy]');
 for(var c=0;c<cps.length;c++){cps[c].onclick=function(){var t=$(this.getAttribute('data-copy')).textContent;var b=this;
   (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){var o=b.textContent;b.textContent='✓';setTimeout(function(){b.textContent=o},1200)}).catch(function(){});};}
+
+applyTheme(document.documentElement.getAttribute('data-theme')||'dark');applyLang();
+getStatus().then(function(s){
+  if(!s)return;
+  S.info=s;
+  if(s.installer){
+    $('inst').classList.remove('hidden');
+    ['s1','s2','s3'].forEach(function(id){$(id).classList.add('hidden')});
+    $('reqBanner').classList.add('hidden');$('doneBanner').classList.add('hidden');
+    return;
+  }
+  $('reqBanner').classList.toggle('hidden',!!s.configured);
+  $('doneBanner').classList.toggle('hidden',!s.configured);
+  if(!s.canUseToken){setMode('key');var cfTab=document.querySelector('[data-tab="cf"]');cfTab.disabled=true;cfTab.title=T[lang].noCfHere;}
+});
 refresh();
 })();
 </script>

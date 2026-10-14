@@ -24,10 +24,18 @@ Only the latest release running on the `main` branch receives security updates.
 3. **Setup Wizard Protection**:
    - The setup wizard API requires `SETUP_KEY` (checked via SHA-256 digests so neither length nor content leaks through timing), only accepts same-origin JSON requests, and refuses all requests while `SETUP_KEY` is unset or shorter than 24 characters.
 
-4. **Input Sanitization & Output Encoding**:
+   - A Cloudflare token is accepted as proof only if it can read the account that owns the workers.dev subdomain in the request URL, so creating a same-named Worker in another account does not pass the check.
+
+4. **Hosted Installer (public instance only)**:
+   - Enabled only when the Worker is deployed with `PUBLIC_INSTALLER=true`; every other copy answers `installer_off`.
+   - It uses the visitor's Cloudflare token for the install calls and does not store or log it, but the visitor cannot verify that the running code matches this repository. The README tells visitors to use a dedicated token and delete it afterwards.
+   - It downloads only the fixed release URL of this repository, never a caller-supplied URL, and checks size and content before uploading.
+   - The setup key it generates is returned once in the response and is stored only as a secret on the visitor's own Worker.
+
+5. **Input Sanitization & Output Encoding**:
    - All external movie titles, user messages, and API strings undergo strict HTML escaping (`escapeHtml`) prior to inclusion in Telegram message bodies or the web interface, preventing HTML injection and XSS.
 
-5. **Security Headers**:
+6. **Security Headers**:
    - The wizard is served with a strict Content-Security-Policy plus `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 
 ---

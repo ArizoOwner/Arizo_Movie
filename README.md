@@ -1,124 +1,130 @@
-# 🎬 Arizo_Movie — 24/7 Serverless Telegram Movie Bot
+<div align="center">
 
-[![Deploy to Cloudflare Workers](https://github.com/ArizoOwner/Arizo_Movie/actions/workflows/deploy.yml/badge.svg)](https://github.com/ArizoOwner/Arizo_Movie/actions/workflows/deploy.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
-[![Telegram Bot API](https://img.shields.io/badge/Telegram-Bot%20API-2CA5E0?logo=telegram)](https://core.telegram.org/bots/api)
-[![TMDB](https://img.shields.io/badge/API-TheMovieDB-01b4e4?logo=themoviedb)](https://www.themoviedb.org/)
+<img src="assets/hero.en.svg" alt="Arizo Movie — serverless Telegram movie bot" width="100%">
 
-[🇮🇷 برای مشاهده راهنمای فارسی کلیک کنید (Persian Documentation)](./README.fa.md)
+<br>
 
-**Arizo_Movie** is an intelligent, high-performance, 24/7 serverless Telegram bot designed for movie and series channel administrators. It automatically fetches rich international metadata from TheMovieDB (TMDB), generates Persian genre hashtags, renders interactive poster carousels with native styled buttons, connects directly to movie files via message forwards or links, and posts directly to your channel.
+[![Deploy](https://img.shields.io/github/actions/workflow/status/ArizoOwner/Arizo_Movie/deploy.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=deploy&color=ef4444)](https://github.com/ArizoOwner/Arizo_Movie/actions)
+[![Release](https://img.shields.io/github/v/release/ArizoOwner/Arizo_Movie?style=for-the-badge&logo=github&color=f59e0b)](https://github.com/ArizoOwner/Arizo_Movie/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](LICENSE)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f6821f?style=for-the-badge&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
+[![Telegram](https://img.shields.io/badge/Telegram-Bot_API-2aabee?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
 
-Built on **Cloudflare Workers** with a **D1 (SQLite)** database. There is no server for you to run or keep alive: Telegram calls your Worker through a webhook whenever someone messages the bot. Cloudflare's free plan has daily request limits; check [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) if your channel is busy.
+[**English**](README.md) &nbsp;·&nbsp; [**فارسی**](README.fa.md)
 
----
+<br>
 
-## ✨ Features
+<a href="https://arizo-owner.arizomovie.workers.dev/">
+  <img src="assets/button.en.svg" alt="Open the Setup Wizard" width="340">
+</a>
 
-- **⚡ Always-on, serverless**: runs on Cloudflare's edge network, so there is no machine of yours to restart. Availability depends on Cloudflare, Telegram and TMDB, none of which this project can guarantee.
-- **🧙‍♂️ Built-in Web Setup Wizard (`/setup`)**: Guarded by a setup key you control; verifies your bot token and TMDB key, creates the tables and registers the webhook.
-- **🎬 TMDB Integration**: Multi-search support for both English and Persian titles with accurate release dates, ratings, and media type detection (Movies & Series).
-- **🎭 Persian Genre Hashtags**: Automatically translates international TMDB genres into official Persian hashtags (`#اکشن`, `#علمی_تخیلی`, etc.).
-- **📺 Smart Series Seasons**: Intelligently handles multi-season TV shows with true broadcast years.
-- **🖼 Interactive Poster Carousel**: Browse international high-resolution posters with styled inline buttons (`◀️ Prev`, `Next ▶️`, `💎 Confirm`).
-- **🔗 1-Click File Linking**: Forward any media/message from your channel or paste its link (`t.me/c/...`) to instantly generate and post the formatted movie card to your destination channel.
-- **🛡 D1 Persistent Database**: Safely retains user sessions, channel preferences, and post records across worker executions.
-- **🔄 Webhook Self-Healing**: A cron trigger re-registers the Telegram webhook every 30 minutes if it went missing.
-- **🚀 Automated CI/CD**: Automatic deployment to Cloudflare Workers on every `git push` via GitHub Actions.
+<sub>https://arizo-owner.arizomovie.workers.dev/</sub>
 
----
+</div>
 
-## 🏗 Architecture
+<img src="assets/divider.svg" alt="" width="100%">
 
-```
-[ Telegram User ] ─── HTTPS Webhook ───> [ Cloudflare Worker ]
-                                                │
-                                    ┌───────────┴───────────┐
-                                    ▼                       ▼
-                           [ TheMovieDB API ]       [ Cloudflare D1 ]
-                           (Metadata & Posters)    (Sessions & Channels)
-                                    │                       │
-                                    └───────────┬───────────┘
-                                                ▼
-                                    [ Target Telegram Channel ]
-```
+## What is it?
 
----
+**Arizo Movie** is a Telegram bot for movie and series channels. You type a title, it pulls the details from [TMDB](https://www.themoviedb.org/), builds the post with Persian genre hashtags, lets you flip through posters with coloured buttons, and publishes the finished post to your channel.
 
-## 🚀 Quick Start Guide
+It runs on **Cloudflare Workers** with a **D1** database, so there is no server for you to rent, patch or keep alive. Telegram calls your Worker through a webhook whenever someone writes to the bot.
 
-### 1. Get the code
+<img src="assets/flow.svg" alt="Telegram to Worker to TMDB, D1 and your channel" width="100%">
+
+## Features
+
+| | |
+|---|---|
+| 🎬 **TMDB search** | Persian or English titles, movie or series, year and rating |
+| 🏷 **Persian hashtags** | TMDB genres become `#اکشن`, `#علمی_تخیلی`, … |
+| 📺 **Seasons** | Multi-season shows list every season with its year |
+| 🖼 **Poster gallery** | Flip through posters, pick one, see the final caption first |
+| 🔗 **File linking** | Forward a message from your channel or paste its link |
+| 🎨 **Coloured buttons** | Blue, green and red inline buttons (Bot API 9.4+) |
+| 🧙 **Setup wizard** | Checks your tokens, creates the database, registers the webhook |
+| 🔄 **Webhook self-heal** | A cron re-registers the webhook if Telegram loses it |
+
+<img src="assets/divider.svg" alt="" width="100%">
+
+## Install in 3 steps
+
+> [!TIP]
+> No terminal, no `wrangler`, no GitHub account needed.
+
+### 1 &nbsp; Let the wizard put the bot in *your* Cloudflare
+
+Open the public wizard: **https://arizo-owner.arizomovie.workers.dev/**
+
+1. Press **Create Cloudflare token** (the permissions are pre-selected), then paste the token.
+2. Press **Install on my account**.
+3. You get your own Worker address and a one-time **setup key**. Copy both.
+
+> [!IMPORTANT]
+> **Know what you are trusting.** This step sends your Cloudflare token to the public wizard's Worker, which uses it for the install calls and does not store it (the code is in [`worker.js`](worker.js), search `handleInstallerApi`). You cannot verify that the running copy matches this source, so create the token just for this, and delete it in the Cloudflare dashboard afterwards. If you would rather not trust anyone, use the manual install below.
+
+### 2 &nbsp; Finish on your own Worker
+
+Open your new address. The setup wizard appears **by itself** and stays until setup is complete; until then the bot answers nothing.
+
+1. Enter the **setup key** from step 1.
+2. Enter your **bot token** ([@BotFather](https://t.me/BotFather)) and your **TMDB key** ([get one](https://www.themoviedb.org/settings/api)). Each is checked against the real service.
+3. Press **Install**.
+
+### 3 &nbsp; Use it
+
+Make the bot an admin of your channel (it must be allowed to post), send `/start`, and type a movie name.
+
+<details>
+<summary><b>Prefer to do it by hand?</b> (paste the file, or use wrangler)</summary>
+
+**Paste the file.** Download `worker.js` from the [latest release](https://github.com/ArizoOwner/Arizo_Movie/releases/latest). In the Cloudflare dashboard create a Worker, paste the file, and deploy. Open the Worker address; the wizard starts and, with a Cloudflare token, creates and binds the database for you.
+
+**wrangler.**
 ```bash
 git clone https://github.com/ArizoOwner/Arizo_Movie.git
 cd Arizo_Movie
-npm install
-```
-
-### 2. Deploy the Worker
-```bash
 npx wrangler login
-npx wrangler deploy        # wrangler 4.x creates the D1 database automatically
+npx wrangler deploy                 # D1 is created automatically
+npx wrangler secret put SETUP_KEY   # any random string, at least 24 characters
 ```
+Then open `/setup` on your Worker and sign in with that key.
 
-### 3. Set your setup key (required)
-The `/setup` wizard only works for someone who knows `SETUP_KEY`. Generate a long random value (at least 24 characters) and store it as a **secret** on the Worker:
-```bash
-npx wrangler secret put SETUP_KEY
-```
-Without it, the wizard refuses every request, so a freshly deployed Worker can never be taken over by a stranger who finds the URL.
+**Deploy on every push.** Add the repository secrets `CLOUDFLARE_API_TOKEN` (Edit access for Workers and D1) and `CLOUDFLARE_ACCOUNT_ID`. Without both, the workflow skips the deploy instead of failing.
 
-### 4. Run the wizard
-Open `https://arizo-movie.<your-subdomain>.workers.dev/setup`, then:
-1. Enter your **setup key**.
-2. Enter your **Telegram bot token** ([@BotFather](https://t.me/BotFather)) and your **TMDB API key** ([themoviedb.org](https://www.themoviedb.org/settings/api)). Each one is checked against the real service.
-3. Press **Install**. The wizard creates the tables, saves the settings, registers the Telegram webhook and the bot commands.
+**Run your own public wizard.** Deploy with `npx wrangler deploy --var PUBLIC_INSTALLER:true`. Do not put that variable in `wrangler.toml`, or every copy of the project would offer to install itself for strangers.
 
-### 5. Optional: deploy on every push
-Add two repository secrets (**Settings ➜ Secrets and variables ➜ Actions**): `CLOUDFLARE_API_TOKEN` (Edit access for Workers and D1) and `CLOUDFLARE_ACCOUNT_ID`. Until both exist the workflow skips the deploy instead of failing.
+</details>
 
----
+<img src="assets/divider.svg" alt="" width="100%">
 
-## 🛡 What the wizard does and does not do
-- It configures **this** Worker: tables, settings, webhook, commands.
-- It does **not** create Cloudflare resources, fork the repository or set GitHub secrets for you. Deploy with wrangler or GitHub Actions as described above.
-- The bot token and TMDB key are stored as plain text in your own D1 database (see [PRIVACY.md](PRIVACY.md)). Anyone with access to your Cloudflare account can read them.
+## Commands
 
----
-
-## 🤖 Bot Commands
-
-| Command | Description |
+| Command | What it does |
 |---|---|
-| `/start` | Open the main menu, check channel status, and start searching |
-| `/setchannel` | Connect or change your destination channel (`@public` or private link) |
-| `/help` | Detailed guide on linking messages, selecting posters, and posting |
-| `/cancel` | Cancel the current operation and reset the session |
+| `/start` | Main menu and channel status |
+| `/setchannel` | Choose or change the destination channel (`@public` or a private post link) |
+| `/help` | Short guide |
+| `/cancel` | Cancel the current action |
 
----
+## Security, honestly
 
-## 🐳 Python Alternative (Optional Docker/Local Run)
+- **Nothing is hard-coded.** Bot and TMDB keys live in *your* D1 database, entered through the wizard.
+- **They are stored as plain text** in that database. Anyone with access to your Cloudflare account can read them. See [PRIVACY.md](PRIVACY.md).
+- **The wizard is locked.** Every setup call must prove ownership with a Cloudflare token for the account that runs the Worker, or with the setup key. Wrong or missing proof is refused.
+- **The webhook is verified** with a random secret on every request.
+- **Availability** depends on Cloudflare, Telegram and TMDB. Cloudflare's free plan has daily request limits: see [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
 
-If you prefer running the Python version with Polling:
+More in [SECURITY.md](SECURITY.md) and [DISCLAIMER.md](DISCLAIMER.md).
 
-```bash
-# Set your environment variables
-export BOT_TOKEN="your_telegram_bot_token"
-export TMDB_KEY="your_tmdb_api_key"
+## Python version
 
-# Install dependencies and run
-pip install -r requirements.txt
-python app3.py
-```
+`app3.py` is a polling bot for running on your own machine or in Docker. Set `BOT_TOKEN` and `TMDB_KEY` as environment variables, then `pip install -r requirements.txt` and `python app3.py`. The Worker above is the main, maintained version.
 
-Or using Docker:
-```bash
-docker build -t arizo-movie .
-docker run -d --name arizo-movie -e BOT_TOKEN="xxx" -e TMDB_KEY="yyy" arizo-movie
-```
+## License
 
----
+[MIT](LICENSE) © ArizoOwner
 
-## 📄 License
+<img src="assets/divider.svg" alt="" width="100%">
 
-This project is licensed under the [MIT License](LICENSE).
+<div align="center"><sub>Made with 🎬 · <a href="README.fa.md">فارسی</a></sub></div>

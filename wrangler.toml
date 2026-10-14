@@ -14,7 +14,7 @@ crons = ["*/30 * * * *"]
 
 [vars]
 PROJECT_NAME = "Arizo_Movie"
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 # Required secret (never commit it):  npx wrangler secret put SETUP_KEY
 # It protects the /setup wizard API. Without it the wizard refuses to save anything.

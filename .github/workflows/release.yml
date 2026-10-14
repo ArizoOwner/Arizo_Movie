@@ -1,0 +1,41 @@
+name: Release single-file Worker
+
+# Push a tag like v2.1.0 and this builds dist/worker.js (the whole bot, wizard
+# included, in ONE file) and attaches it to a GitHub release.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build single-file worker
+        run: node scripts/build.mjs
+
+      - name: Syntax check
+        run: |
+          node --check worker.js
+          node --check dist/worker.js
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/worker.js \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Arizo Movie $TAG" \
+            --generate-notes \
+            --notes "Single-file Cloudflare Worker. Paste worker.js into a new Worker, open its address, and the setup wizard starts automatically. See the README."

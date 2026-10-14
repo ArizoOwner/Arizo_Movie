@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-labelledby="t d">
+  <title id="t">Arizo Movie</title>
+  <desc id="d">Animated banner: a pulsing play button above the title Arizo Movie, with a moving film strip.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0b12"/><stop offset="1" stop-color="#1a0c10"/>
+    </linearGradient>
+    <radialGradient id="g1" cx="12%" cy="10%" r="48%">
+      <stop offset="0" stop-color="#ef4444" stop-opacity=".45"/><stop offset="1" stop-color="#ef4444" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="90%" cy="92%" r="48%">
+      <stop offset="0" stop-color="#f59e0b" stop-opacity=".34"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tg" gradientUnits="userSpaceOnUse" x1="300" y1="0" x2="900" y2="0" spreadMethod="repeat">
+      <stop offset="0" stop-color="#ef4444"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#ef4444"/>
+      <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="600 0" dur="5s" repeatCount="indefinite"/>
+    </linearGradient>
+    <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ef4444"/><stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+    <pattern id="holesTop" width="44" height="34" patternUnits="userSpaceOnUse">
+      <rect x="12" y="9" width="20" height="16" rx="4" fill="#23232f"/>
+      <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="44 0" dur="2.2s" repeatCount="indefinite"/>
+    </pattern>
+    <pattern id="holesBottom" width="44" height="34" patternUnits="userSpaceOnUse">
+      <rect x="12" y="9" width="20" height="16" rx="4" fill="#23232f"/>
+      <animateTransform attributeName="patternTransform" type="translate" from="44 0" to="0 0" dur="2.2s" repeatCount="indefinite"/>
+    </pattern>
+    <clipPath id="typing">
+      <rect x="140" y="252" width="0" height="60">
+        <animate attributeName="width" values="0;920;920;0" keyTimes="0;0.36;0.9;1" dur="9s" repeatCount="indefinite"/>
+      </rect>
+    </clipPath>
+    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <style>
+    text{font-family:'Segoe UI','Vazirmatn',Tahoma,system-ui,-apple-system,Arial,sans-serif}
+    .ripple{transform-box:fill-box;transform-origin:center;animation:rip 3.2s ease-out infinite}
+    .r2{animation-delay:1.05s}.r3{animation-delay:2.1s}
+    @keyframes rip{0%{transform:scale(1);opacity:.6}100%{transform:scale(3.4);opacity:0}}
+    .chip{opacity:0;transform-box:fill-box;transform-origin:center;animation:up .8s ease forwards}
+    .c1{animation-delay:.4s}.c2{animation-delay:.65s}.c3{animation-delay:.9s}.c4{animation-delay:1.15s}
+    @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    .p{fill:#fbbf24;opacity:0;animation:rise linear infinite}
+    @keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-330px);opacity:0}}
+    .play{transform-box:fill-box;transform-origin:center;animation:beat 1.6s ease-in-out infinite}
+    @keyframes beat{50%{transform:scale(1.08)}}
+    @media (prefers-reduced-motion:reduce){.chip{opacity:1;animation:none}.p{display:none}.ripple,.play{animation:none}}
+  </style>
+
+  <rect width="1200" height="420" fill="url(#bg)"/>
+  <rect width="1200" height="420" fill="url(#g1)"/>
+  <rect width="1200" height="420" fill="url(#g2)"/>
+
+  <g aria-hidden="true">
+    <circle class="p" cx="90"  cy="380" r="3"   style="animation-duration:7s;animation-delay:0s"/>
+    <circle class="p" cx="230" cy="390" r="2"   style="animation-duration:9s;animation-delay:1.5s"/>
+    <circle class="p" cx="360" cy="385" r="3.5" style="animation-duration:8s;animation-delay:3s"/>
+    <circle class="p" cx="520" cy="392" r="2"   style="animation-duration:10s;animation-delay:.8s"/>
+    <circle class="p" cx="680" cy="386" r="3"   style="animation-duration:7.5s;animation-delay:2.2s"/>
+    <circle class="p" cx="830" cy="390" r="2.5" style="animation-duration:9.5s;animation-delay:4s"/>
+    <circle class="p" cx="960" cy="384" r="3"   style="animation-duration:8.5s;animation-delay:1.2s"/>
+    <circle class="p" cx="1100" cy="392" r="2"  style="animation-duration:7s;animation-delay:3.4s"/>
+    <circle class="p" cx="150" cy="388" r="2"   style="animation-duration:11s;animation-delay:5s"/>
+    <circle class="p" cx="1030" cy="388" r="3.5" style="animation-duration:10s;animation-delay:2.7s"/>
+  </g>
+
+  <rect x="0" y="0" width="1200" height="34" fill="#0d0d13"/>
+  <rect x="0" y="0" width="1200" height="34" fill="url(#holesTop)"/>
+  <rect x="0" y="386" width="1200" height="34" fill="#0d0d13"/>
+  <rect x="0" y="386" width="1200" height="34" fill="url(#holesBottom)"/>
+
+  <g transform="translate(600 112)">
+    <circle class="ripple r1" r="30" fill="none" stroke="#ef4444" stroke-width="3"/>
+    <circle class="ripple r2" r="30" fill="none" stroke="#f59e0b" stroke-width="3"/>
+    <circle class="ripple r3" r="30" fill="none" stroke="#ef4444" stroke-width="3"/>
+    <g class="play">
+      <circle r="32" fill="url(#pg)"/>
+      <path d="M-9 -16 L-9 16 L18 0 Z" fill="#fff"/>
+    </g>
+  </g>
+
+  <text x="600" y="232" text-anchor="middle" font-size="90" font-weight="800" fill="url(#tg)" filter="url(#glow)" textLength="538" lengthAdjust="spacingAndGlyphs">Arizo Movie</text>
+
+  <g clip-path="url(#typing)">
+    <text x="600" y="292" text-anchor="middle" font-size="26" font-weight="500" fill="#e5e7eb" textLength="700" lengthAdjust="spacingAndGlyphs">Serverless Telegram movie bot · TMDB · Cloudflare Workers</text>
+  </g>
+
+  <g font-size="18" font-weight="600" text-anchor="middle" fill="#f3f4f6">
+    <g class="chip c1"><rect x="276" y="318" width="190" height="38" rx="19" fill="#ffffff" fill-opacity=".07" stroke="#ffffff" stroke-opacity=".16"/><text x="371" y="343" textLength="157" lengthAdjust="spacingAndGlyphs">Cloudflare Workers</text></g>
+    <g class="chip c2"><rect x="482" y="318" width="90"  height="38" rx="19" fill="#ffffff" fill-opacity=".07" stroke="#ffffff" stroke-opacity=".16"/><text x="527" y="343" textLength="48" lengthAdjust="spacingAndGlyphs">TMDB</text></g>
+    <g class="chip c3"><rect x="588" y="318" width="130" height="38" rx="19" fill="#ffffff" fill-opacity=".07" stroke="#ffffff" stroke-opacity=".16"/><text x="653" y="343" textLength="78" lengthAdjust="spacingAndGlyphs">D1 SQLite</text></g>
+    <g class="chip c4"><rect x="734" y="318" width="190" height="38" rx="19" fill="#ffffff" fill-opacity=".07" stroke="#ffffff" stroke-opacity=".16"/><text x="829" y="343" textLength="140" lengthAdjust="spacingAndGlyphs">Telegram Bot API</text></g>
+  </g>
+</svg>

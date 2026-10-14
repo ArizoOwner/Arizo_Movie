@@ -1197,14 +1197,12 @@ const SECURITY_HEADERS = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 };
 
-// The wizard is a single static page: inline script/style plus Google Fonts.
-const WIZARD_CSP =
-  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; " +
-  "font-src https://fonts.gstatic.com; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 const BOT_TOKEN_RE = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
 const TMDB_KEY_RE = /^[a-f0-9]{32}$/i;
 const MAX_SETUP_BODY = 10_000;
+const CF_API = "https://api.cloudflare.com/client/v4";
+const CRON_EXPRESSION = "*/30 * * * *";
 
 function jsonResponse(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -1226,7 +1224,7 @@ async function sha256(value) {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", data));
 }
 
-// Compares digests so neither the content nor the length of the key leaks via timing.
+// Compares digests so neither the content nor the length of a secret leaks via timing.
 async function safeEqual(a, b) {
   const [x, y] = await Promise.all([sha256(a), sha256(b)]);
   let diff = 0;
@@ -1234,24 +1232,107 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-// Returns null when the caller knows SETUP_KEY, otherwise the error Response.
-// SETUP_KEY is read from the Worker environment only, never from D1, so the
-// wizard cannot be used to change or bypass it.
-async function authorizeSetup(env, body) {
-  const expected = env.SETUP_KEY ? String(env.SETUP_KEY) : "";
-  if (expected.length < 24) {
-    return fail(
-      503,
-      "کلید SETUP_KEY روی Worker تنظیم نشده یا کوتاه‌تر از ۲۴ کاراکتر است.",
-      "SETUP_KEY is not set on the Worker or is shorter than 24 characters.",
-      "no_setup_key"
-    );
+// ── Cloudflare API helpers (used only when the owner pastes an API token) ─────
+async function cfFetch(token, path, init = {}) {
+  try {
+    const res = await fetch(CF_API + path, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, ...(init.headers || {}) },
+    });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (e) {
+      /* non-JSON body */
+    }
+    return { ok: res.ok && !!data && data.success !== false, status: res.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: null };
   }
-  const given = typeof body.setupKey === "string" ? body.setupKey : "";
-  if (!given || !(await safeEqual(given, expected))) {
-    return fail(401, "کلید راه‌اندازی اشتباه است.", "Wrong setup key.", "bad_key");
+}
+
+function cfErrorText(res) {
+  const first = res && res.data && res.data.errors && res.data.errors[0];
+  return first && first.message ? String(first.message).slice(0, 200) : `HTTP ${res ? res.status : "?"}`;
+}
+
+// A workers.dev host looks like <script>.<account-subdomain>.workers.dev.
+function parseWorkersDevHost(hostname) {
+  const parts = String(hostname).toLowerCase().split(".");
+  if (parts.length === 4 && parts[2] === "workers" && parts[3] === "dev") {
+    return { script: parts[0], subdomain: parts[1] };
   }
   return null;
+}
+
+// Proves the caller controls the Cloudflare account that SERVES this request.
+// The check is anchored to the workers.dev subdomain in the request URL, which is
+// unique per account, so an attacker cannot pass it by creating a same-named
+// Worker in their own account.
+async function proveCloudflareOwner(cfToken, url) {
+  const host = parseWorkersDevHost(url.hostname);
+  if (!host) {
+    return {
+      error: fail(
+        400,
+        "این آدرس workers.dev نیست؛ برای دامنهٔ اختصاصی از SETUP_KEY استفاده کنید.",
+        "This is not a workers.dev address; use SETUP_KEY for custom domains.",
+        "custom_domain"
+      ),
+    };
+  }
+  const accounts = await cfFetch(cfToken, "/accounts?per_page=50");
+  if (!accounts.ok) {
+    return {
+      error: fail(
+        401,
+        "توکن Cloudflare معتبر نیست یا دسترسی «Account Settings: Read» ندارد.",
+        "The Cloudflare token is invalid or lacks Account Settings: Read.",
+        "bad_cf_token"
+      ),
+    };
+  }
+  for (const acc of accounts.data.result || []) {
+    const sub = await cfFetch(cfToken, `/accounts/${acc.id}/workers/subdomain`);
+    if (!sub.ok || !sub.data.result || sub.data.result.subdomain !== host.subdomain) continue;
+    const script = await cfFetch(cfToken, `/accounts/${acc.id}/workers/scripts/${host.script}/settings`);
+    if (script.ok) return { accountId: acc.id, script: host.script };
+  }
+  return {
+    error: fail(
+      403,
+      "این توکن به اکانتی که این Worker روی آن اجرا می‌شود دسترسی ندارد.",
+      "This token has no access to the account that runs this Worker.",
+      "not_owner"
+    ),
+  };
+}
+
+// Returns { via, ... } on success or { error: Response } on failure.
+async function authorizeSetup(env, body, url) {
+  if (typeof body.setupKey === "string" && body.setupKey) {
+    const expected = env.SETUP_KEY ? String(env.SETUP_KEY) : "";
+    if (expected.length >= 24 && (await safeEqual(body.setupKey, expected))) return { via: "key" };
+    return { error: fail(401, "کلید راه‌اندازی اشتباه است.", "Wrong setup key.", "bad_key") };
+  }
+  if (typeof body.cfToken === "string" && body.cfToken) {
+    const proof = await proveCloudflareOwner(body.cfToken.trim(), url);
+    if (proof.error) return proof;
+    return { via: "cloudflare", cfToken: body.cfToken.trim(), accountId: proof.accountId, script: proof.script };
+  }
+  return {
+    error: fail(401, "توکن Cloudflare یا کلید راه‌اندازی لازم است.", "A Cloudflare token or setup key is required.", "no_credentials"),
+  };
+}
+
+async function isConfigured(env) {
+  if (!env.DB) return false;
+  const [bot, tmdb, secret] = await Promise.all([
+    getSetting(env, "BOT_TOKEN"),
+    getSetting(env, "TMDB_KEY"),
+    getSetting(env, "WEBHOOK_SECRET"),
+  ]);
+  return !!(bot && tmdb && secret);
 }
 
 async function telegramGetMe(botToken) {
@@ -1263,7 +1344,62 @@ async function telegramGetMe(botToken) {
   }
 }
 
+// Creates (or reuses) a D1 database and binds it to this Worker as DB, keeping
+// every binding the Worker already has (variables and secrets such as SETUP_KEY).
+async function createAndBindDatabase(auth) {
+  const { cfToken, accountId, script } = auth;
+  const dbName = `${script}-db`.slice(0, 60);
+
+  const db = await getOrCreateDatabase(cfToken, accountId, dbName);
+  if (db.error) return db.error;
+  const dbId = db.dbId;
+
+  const current = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${script}/settings`);
+  if (!current.ok) {
+    return fail(502, "خواندن تنظیمات Worker ناموفق بود.", `Reading the Worker settings failed. (${cfErrorText(current)})`, "settings_read_failed");
+  }
+  const keep = ((current.data.result && current.data.result.bindings) || [])
+    .filter((b) => b.name !== "DB")
+    .map((b) => ({ name: b.name, type: "inherit" }));
+  const settings = { bindings: [...keep, { name: "DB", type: "d1", id: dbId }] };
+
+  const form = new FormData();
+  form.append("settings", new Blob([JSON.stringify(settings)], { type: "application/json" }));
+  const patched = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${script}/settings`, {
+    method: "PATCH",
+    body: form,
+  });
+  if (!patched.ok) {
+    return fail(
+      502,
+      `اتصال دیتابیس به Worker ناموفق بود. دسترسی «Workers Scripts: Edit» را بررسی کنید. (${cfErrorText(patched)})`,
+      `Binding the database to the Worker failed. Check Workers Scripts: Edit. (${cfErrorText(patched)})`,
+      "bind_failed"
+    );
+  }
+  return jsonResponse({ ok: true });
+}
+
 async function handleSetupApi(request, env, url) {
+  const step = url.pathname.slice("/api/setup/".length);
+
+  // Public, read-only: lets the wizard decide which banner and steps to show.
+  if (step === "status" && request.method === "GET") {
+    const host = parseWorkersDevHost(url.hostname);
+    return jsonResponse({
+      ok: true,
+      configured: await isConfigured(env),
+      hasDb: !!env.DB,
+      hasKey: !!(env.SETUP_KEY && String(env.SETUP_KEY).length >= 24),
+      canUseToken: !!host,
+      script: host ? host.script : null,
+      installer: installerEnabled(env),
+    });
+  }
+
+  if (request.method !== "POST") {
+    return fail(405, "متد مجاز نیست.", "Method not allowed.", "bad_method");
+  }
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) {
     return fail(403, "درخواست از مبدأ نامعتبر.", "Cross-origin request refused.", "bad_origin");
@@ -1285,13 +1421,11 @@ async function handleSetupApi(request, env, url) {
     return fail(400, "بدنهٔ درخواست نامعتبر است.", "Invalid JSON body.", "bad_json");
   }
 
-  const denied = await authorizeSetup(env, body);
-  if (denied) return denied;
+  const auth = await authorizeSetup(env, body, url);
+  if (auth.error) return auth.error;
 
-  const step = url.pathname.slice("/api/setup/".length);
-
-  if (step === "key/verify") {
-    return jsonResponse({ ok: true });
+  if (step === "key/verify" || step === "cloudflare/verify") {
+    return jsonResponse({ ok: true, via: auth.via, script: auth.script || null });
   }
 
   if (step === "telegram/verify") {
@@ -1322,6 +1456,19 @@ async function handleSetupApi(request, env, url) {
       return fail(400, "TMDB این کلید را نپذیرفت.", "TMDB rejected this key.", "tmdb_rejected");
     }
     return jsonResponse({ ok: true });
+  }
+
+  if (step === "install/database") {
+    if (env.DB) return jsonResponse({ ok: true, skipped: true });
+    if (auth.via !== "cloudflare") {
+      return fail(
+        409,
+        "دیتابیس D1 به این Worker وصل نیست. با توکن Cloudflare وارد شوید تا ویزارد آن را بسازد.",
+        "No D1 database is bound. Sign in with a Cloudflare token so the wizard can create one.",
+        "need_cf_token"
+      );
+    }
+    return createAndBindDatabase(auth);
   }
 
   if (step === "install/save") {
@@ -1393,31 +1540,304 @@ async function handleSetupApi(request, env, url) {
     return jsonResponse({ ok: true });
   }
 
+  // Optional: a Worker pasted into the dashboard has no cron yet. Not fatal.
+  if (step === "install/schedule") {
+    if (auth.via !== "cloudflare") return jsonResponse({ ok: true, skipped: true });
+    const res = await cfFetch(auth.cfToken, `/accounts/${auth.accountId}/workers/scripts/${auth.script}/schedules`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([{ cron: CRON_EXPRESSION }]),
+    });
+    if (!res.ok) {
+      return jsonResponse({ ok: true, warning: `cron: ${cfErrorText(res)}` });
+    }
+    return jsonResponse({ ok: true });
+  }
+
   return fail(404, "مسیر پیدا نشد.", "Unknown setup step.", "not_found");
+}
+
+// ─── Hosted installer (public instance only: deploy with PUBLIC_INSTALLER=true) ─
+// A visitor pastes a Cloudflare API token and this Worker deploys a copy of the
+// bot into THEIR account. The token is used for the calls below and never stored.
+// The bot token and TMDB key are NOT handled here: the visitor enters them on
+// their own Worker afterwards.
+const RELEASE_URL = "https://github.com/ArizoOwner/Arizo_Movie/releases/latest/download/worker.js";
+const MAX_RELEASE_BYTES = 1_500_000;
+const WORKER_NAME_RE = /^[a-z0-9][a-z0-9-]{0,53}$/;
+const SUBDOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const ACCOUNT_ID_RE = /^[a-f0-9]{32}$/;
+const UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+
+function installerEnabled(env) {
+  return String(env.PUBLIC_INSTALLER || "") === "true";
+}
+
+// The wizard is a single page: inline script/style plus Google Fonts. On the
+// public instance it may also poll a freshly deployed Worker's /health.
+function wizardCsp(env) {
+  const connect = installerEnabled(env) ? "'self' https://*.workers.dev" : "'self'";
+  return (
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; " +
+    `font-src https://fonts.gstatic.com; connect-src ${connect}; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`
+  );
+}
+
+async function getOrCreateDatabase(cfToken, accountId, dbName) {
+  const found = await cfFetch(cfToken, `/accounts/${accountId}/d1/database?name=${encodeURIComponent(dbName)}`);
+  if (found.ok) {
+    const hit = (found.data.result || []).find((d) => d.name === dbName);
+    if (hit) return { dbId: hit.uuid };
+  }
+  const created = await cfFetch(cfToken, `/accounts/${accountId}/d1/database`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: dbName }),
+  });
+  if (!created.ok) {
+    return {
+      error: fail(
+        502,
+        `ساخت دیتابیس D1 ناموفق بود. دسترسی «D1: Edit» را بررسی کنید. (${cfErrorText(created)})`,
+        `Creating the D1 database failed. Check the D1: Edit permission. (${cfErrorText(created)})`,
+        "d1_create_failed"
+      ),
+    };
+  }
+  return { dbId: created.data.result.uuid };
+}
+
+async function readJsonRequest(request, url) {
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== url.origin) {
+    return { error: fail(403, "درخواست از مبدأ نامعتبر.", "Cross-origin request refused.", "bad_origin") };
+  }
+  if (!(request.headers.get("Content-Type") || "").includes("application/json")) {
+    return { error: fail(415, "نوع درخواست نامعتبر است.", "Expected application/json.", "bad_type") };
+  }
+  if (Number(request.headers.get("Content-Length") || 0) > MAX_SETUP_BODY) {
+    return { error: fail(413, "درخواست بیش از حد بزرگ است.", "Request too large.", "too_large") };
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return { error: fail(400, "بدنهٔ درخواست نامعتبر است.", "Invalid JSON body.", "bad_json") };
+  }
+  if (!body || typeof body !== "object") {
+    return { error: fail(400, "بدنهٔ درخواست نامعتبر است.", "Invalid JSON body.", "bad_json") };
+  }
+  return { body };
+}
+
+// Only ever fetches the fixed release URL above, so a caller cannot make this
+// Worker request anything else.
+async function fetchReleaseSource() {
+  let res;
+  try {
+    res = await fetch(RELEASE_URL, { redirect: "follow", cf: { cacheTtl: 300, cacheEverything: true } });
+  } catch (e) {
+    return { error: fail(502, "دانلود فایل ربات از GitHub ناموفق بود.", "Downloading the bot file from GitHub failed.", "release_unreachable") };
+  }
+  if (!res.ok) {
+    return {
+      error: fail(
+        502,
+        `فایل ریلیز ربات پیدا نشد (HTTP ${res.status}).`,
+        `The bot release file was not found (HTTP ${res.status}).`,
+        "release_missing"
+      ),
+    };
+  }
+  const declared = Number(res.headers.get("Content-Length") || 0);
+  const text = declared > MAX_RELEASE_BYTES ? "" : await res.text();
+  if (!text || text.length > MAX_RELEASE_BYTES || !text.includes("export default") || !text.includes("Arizo_Movie")) {
+    return { error: fail(502, "فایل ریلیز معتبر نیست.", "The release file is not valid.", "release_invalid") };
+  }
+  return { text };
+}
+
+async function handleInstallerApi(request, env, url) {
+  if (!installerEnabled(env)) {
+    return fail(404, "نصب‌کنندهٔ همگانی روی این Worker فعال نیست.", "The hosted installer is not enabled on this Worker.", "installer_off");
+  }
+  if (request.method !== "POST") {
+    return fail(405, "متد مجاز نیست.", "Method not allowed.", "bad_method");
+  }
+  const parsed = await readJsonRequest(request, url);
+  if (parsed.error) return parsed.error;
+  const body = parsed.body;
+
+  const cfToken = typeof body.cfToken === "string" ? body.cfToken.trim() : "";
+  if (!cfToken || cfToken.length > 200) {
+    return fail(401, "توکن Cloudflare لازم است.", "A Cloudflare token is required.", "no_credentials");
+  }
+  const step = url.pathname.slice("/api/installer/".length);
+
+  if (step === "verify") {
+    const accounts = await cfFetch(cfToken, "/accounts?per_page=50");
+    if (!accounts.ok) {
+      return fail(
+        401,
+        "توکن Cloudflare معتبر نیست یا دسترسی «Account Settings: Read» ندارد.",
+        "The Cloudflare token is invalid or lacks Account Settings: Read.",
+        "bad_cf_token"
+      );
+    }
+    const list = [];
+    for (const acc of (accounts.data.result || []).slice(0, 8)) {
+      const [sub, scripts, d1] = await Promise.all([
+        cfFetch(cfToken, `/accounts/${acc.id}/workers/subdomain`),
+        cfFetch(cfToken, `/accounts/${acc.id}/workers/scripts`),
+        cfFetch(cfToken, `/accounts/${acc.id}/d1/database?per_page=1`),
+      ]);
+      list.push({
+        id: acc.id,
+        name: acc.name,
+        subdomain: sub.ok && sub.data.result ? sub.data.result.subdomain || null : null,
+        canWorkers: scripts.ok,
+        canD1: d1.ok,
+      });
+    }
+    return jsonResponse({ ok: true, accounts: list });
+  }
+
+  const accountId = String(body.accountId || "");
+  if (!ACCOUNT_ID_RE.test(accountId)) {
+    return fail(400, "شناسهٔ اکانت نامعتبر است.", "Invalid account id.", "bad_account");
+  }
+
+  if (step === "subdomain") {
+    const subdomain = String(body.subdomain || "").trim().toLowerCase();
+    if (!SUBDOMAIN_RE.test(subdomain)) {
+      return fail(400, "نام زیردامنه نامعتبر است (حروف کوچک، عدد و خط تیره).", "Invalid subdomain (lowercase letters, digits and dashes).", "bad_subdomain");
+    }
+    const res = await cfFetch(cfToken, `/accounts/${accountId}/workers/subdomain`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subdomain }),
+    });
+    if (!res.ok) {
+      return fail(409, `ثبت زیردامنه ناموفق بود: ${cfErrorText(res)}`, `Registering the subdomain failed: ${cfErrorText(res)}`, "subdomain_failed");
+    }
+    return jsonResponse({ ok: true, subdomain });
+  }
+
+  const workerName = String(body.workerName || "").trim().toLowerCase();
+  if (!WORKER_NAME_RE.test(workerName)) {
+    return fail(400, "نام Worker نامعتبر است (حروف کوچک، عدد و خط تیره).", "Invalid Worker name (lowercase letters, digits and dashes).", "bad_worker_name");
+  }
+
+  if (step === "resources") {
+    const db = await getOrCreateDatabase(cfToken, accountId, `${workerName}-db`.slice(0, 60));
+    if (db.error) return db.error;
+    const existing = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${workerName}/settings`);
+    return jsonResponse({ ok: true, dbId: db.dbId, workerExists: existing.ok });
+  }
+
+  if (step === "deploy") {
+    const dbId = String(body.dbId || "");
+    if (!UUID_RE.test(dbId)) {
+      return fail(400, "شناسهٔ دیتابیس نامعتبر است.", "Invalid database id.", "bad_db");
+    }
+    const source = await fetchReleaseSource();
+    if (source.error) return source.error;
+
+    // A random key the visitor receives once, to continue on their own Worker.
+    const setupKey = generateRandomToken(24);
+    const metadata = {
+      main_module: "worker.js",
+      compatibility_date: "2024-04-01",
+      bindings: [
+        { type: "d1", name: "DB", id: dbId },
+        { type: "secret_text", name: "SETUP_KEY", text: setupKey },
+        { type: "plain_text", name: "PROJECT_NAME", text: "Arizo_Movie" },
+      ],
+    };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("worker.js", new Blob([source.text], { type: "application/javascript+module" }), "worker.js");
+
+    const upload = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${workerName}`, {
+      method: "PUT",
+      body: form,
+    });
+    if (!upload.ok) {
+      return fail(
+        502,
+        `آپلود Worker ناموفق بود. دسترسی «Workers Scripts: Edit» را بررسی کنید. (${cfErrorText(upload)})`,
+        `Uploading the Worker failed. Check the Workers Scripts: Edit permission. (${cfErrorText(upload)})`,
+        "upload_failed"
+      );
+    }
+    const enable = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${workerName}/subdomain`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: true, previews_enabled: false }),
+    });
+    if (!enable.ok) {
+      return fail(
+        502,
+        `فعال‌سازی آدرس workers.dev ناموفق بود. (${cfErrorText(enable)})`,
+        `Enabling the workers.dev address failed. (${cfErrorText(enable)})`,
+        "enable_failed"
+      );
+    }
+    const cron = await cfFetch(cfToken, `/accounts/${accountId}/workers/scripts/${workerName}/schedules`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([{ cron: CRON_EXPRESSION }]),
+    });
+    const sub = await cfFetch(cfToken, `/accounts/${accountId}/workers/subdomain`);
+    const subdomain = sub.ok && sub.data.result ? sub.data.result.subdomain : null;
+    if (!subdomain) {
+      return fail(409, "برای این اکانت زیردامنهٔ workers.dev ثبت نشده است.", "This account has no workers.dev subdomain yet.", "no_subdomain");
+    }
+    return jsonResponse({
+      ok: true,
+      url: `https://${workerName}.${subdomain}.workers.dev`,
+      setupKey,
+      cronWarning: cron.ok ? null : cfErrorText(cron),
+    });
+  }
+
+  return fail(404, "مسیر پیدا نشد.", "Unknown installer step.", "not_found");
 }
 
 // ─── Entry point (fetch & scheduled) ──────────────────────────────────────────
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const isRead = request.method === "GET" || request.method === "HEAD";
 
     if (url.pathname === "/health") {
-      return jsonResponse({ status: "ok", worker: "Arizo_Movie" });
+      const res = jsonResponse({ status: "ok", worker: "Arizo_Movie" });
+      res.headers.set("Access-Control-Allow-Origin", "*");
+      return res;
     }
 
-    if ((url.pathname === "/setup" || url.pathname === "/") && (request.method === "GET" || request.method === "HEAD")) {
+    if (url.pathname === "/setup" && isRead) {
       return new Response(request.method === "HEAD" ? null : WIZARD_HTML, {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
           "Cache-Control": "no-store",
-          "Content-Security-Policy": WIZARD_CSP,
+          "Content-Security-Policy": wizardCsp(env),
           ...SECURITY_HEADERS,
         },
       });
     }
 
-    if (url.pathname.startsWith("/api/setup/") && request.method === "POST") {
+    if (url.pathname.startsWith("/api/installer/")) {
+      try {
+        return await handleInstallerApi(request, env, url);
+      } catch (e) {
+        console.error("installer api crashed:", e);
+        return fail(500, "خطای داخلی سرور.", "Internal error.", "internal");
+      }
+    }
+
+    if (url.pathname.startsWith("/api/setup/")) {
       try {
         return await handleSetupApi(request, env, url);
       } catch (e) {
@@ -1450,6 +1870,15 @@ export default {
         })
       );
       return new Response("OK", { status: 200 });
+    }
+
+    // Anything else a browser opens lands on the wizard, so a freshly deployed
+    // Worker always shows setup first.
+    if (isRead) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: "/setup", "Cache-Control": "no-store", ...SECURITY_HEADERS },
+      });
     }
 
     return new Response("Not Found", { status: 404 });

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 340" width="1100" height="340" role="img" aria-labelledby="t d">
+  <title id="t">How Arizo Movie works</title>
+  <desc id="d">A Telegram message reaches the Cloudflare Worker through a webhook. The Worker reads movie data from TMDB, keeps sessions in D1 and publishes the finished post to your channel.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b0b12"/><stop offset="1" stop-color="#150c12"/></linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <style>
+    text{font-family:'Segoe UI','Vazirmatn',Tahoma,system-ui,-apple-system,Arial,sans-serif;fill:#f3f4f6}
+    .t{font-size:20px;font-weight:700}.s{font-size:13px;fill:#a1a1aa}.l{font-size:13px;fill:#d4d4d8;font-weight:600}
+    .edge{fill:none;stroke:#52525b;stroke-width:2.5;stroke-dasharray:7 9;animation:dash 1.1s linear infinite}
+    @keyframes dash{to{stroke-dashoffset:-16}}
+    .node{animation:glow 3.6s ease-in-out infinite}
+    .n2{animation-delay:.5s}.n3{animation-delay:1s}.n4{animation-delay:1.5s}.n5{animation-delay:2s}
+    @keyframes glow{50%{opacity:.82}}
+    @media (prefers-reduced-motion:reduce){.edge,.node{animation:none}}
+  </style>
+
+  <rect width="1100" height="340" rx="22" fill="url(#bg)"/>
+
+  <path id="e1" class="edge" d="M185 170 L345 170"/>
+  <path id="e2" class="edge" d="M495 170 C 600 170 610 72 685 72"/>
+  <path id="e3" class="edge" d="M495 170 C 600 170 610 268 685 268"/>
+  <path id="e4" class="edge" d="M495 170 L915 170"/>
+
+  <text class="l" x="265" y="152" text-anchor="middle">webhook</text>
+  <text class="l" x="575" y="68" text-anchor="middle">search · posters</text>
+  <text class="l" x="575" y="278" text-anchor="middle">sessions · settings</text>
+  <text class="l" x="705" y="152" text-anchor="middle">publish post</text>
+
+  <g fill="#fff" opacity=".95">
+    <circle r="5"><animateMotion dur="2.4s" repeatCount="indefinite" path="M185 170 L345 170"/></circle>
+    <circle r="5"><animateMotion dur="2.8s" begin=".6s" repeatCount="indefinite" path="M495 170 C 600 170 610 72 685 72"/></circle>
+    <circle r="5"><animateMotion dur="2.8s" begin="1.2s" repeatCount="indefinite" path="M495 170 C 600 170 610 268 685 268"/></circle>
+    <circle r="5"><animateMotion dur="3.4s" begin="1.8s" repeatCount="indefinite" path="M495 170 L915 170"/></circle>
+  </g>
+
+  <g class="node n1">
+    <rect x="35" y="132" width="150" height="76" rx="18" fill="#2aabee" fill-opacity=".16" stroke="#2aabee" stroke-width="2"/>
+    <text class="t" x="110" y="166" text-anchor="middle">Telegram</text><text class="s" x="110" y="188" text-anchor="middle" textLength="112" lengthAdjust="spacingAndGlyphs">you message the bot</text>
+  </g>
+  <g class="node n2">
+    <rect x="345" y="122" width="150" height="96" rx="18" fill="#f6821f" fill-opacity=".18" stroke="#f6821f" stroke-width="2.5"/>
+    <text class="t" x="420" y="162" text-anchor="middle">Worker</text><text class="s" x="420" y="184" text-anchor="middle">Cloudflare edge</text><text class="s" x="420" y="202" text-anchor="middle">+ setup wizard</text>
+  </g>
+  <g class="node n3">
+    <rect x="685" y="34" width="150" height="76" rx="18" fill="#01b4e4" fill-opacity=".16" stroke="#01b4e4" stroke-width="2"/>
+    <text class="t" x="760" y="68" text-anchor="middle">TMDB</text><text class="s" x="760" y="90" text-anchor="middle">titles · posters</text>
+  </g>
+  <g class="node n4">
+    <rect x="685" y="230" width="150" height="76" rx="18" fill="#8b5cf6" fill-opacity=".18" stroke="#8b5cf6" stroke-width="2"/>
+    <text class="t" x="760" y="264" text-anchor="middle">D1</text><text class="s" x="760" y="286" text-anchor="middle">your database</text>
+  </g>
+  <g class="node n5">
+    <rect x="915" y="132" width="150" height="76" rx="18" fill="#22c55e" fill-opacity=".16" stroke="#22c55e" stroke-width="2"/>
+    <text class="t" x="990" y="166" text-anchor="middle" textLength="120" lengthAdjust="spacingAndGlyphs">Your channel</text><text class="s" x="990" y="188" text-anchor="middle">post goes live</text>
+  </g>
+</svg>

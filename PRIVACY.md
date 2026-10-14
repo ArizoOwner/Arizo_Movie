@@ -18,3 +18,6 @@
 ### 3. Data Retention & Deletion
 - User session states are automatically cleared upon workflow completion or when invoking `/cancel`.
 - Channel administrators have complete access to inspect or wipe their Cloudflare D1 tables at any time using standard SQL commands.
+
+### 4. Hosted installer (public instance only)
+If you use a public installer instance, the Cloudflare token you paste is sent to that instance's Worker and used for the install calls. The code does not store or log it, but you cannot verify what the running copy does, so use a token created only for this and delete it afterwards. Your bot token and TMDB key are **never** sent to the installer; you enter them on your own Worker.
