@@ -14,11 +14,11 @@
 
 <br>
 
-<a href="https://arizo-owner.arizomovie.workers.dev/">
+<a href="https://arizo-setup.amirmsr.tech/">
   <img src="assets/button.en.svg" alt="Open the Setup Wizard" width="340">
 </a>
 
-<sub>https://arizo-owner.arizomovie.workers.dev/</sub>
+<sub>https://arizo-setup.amirmsr.tech/</sub>
 
 <br>
 
@@ -67,7 +67,10 @@ Open **[@MSRMovieBot](https://t.me/MSRMovieBot)** in Telegram, press **Start** a
 
 ### 1 &nbsp; Let the wizard put the bot in *your* Cloudflare
 
-Open the public wizard: **https://arizo-owner.arizomovie.workers.dev/**
+Open the public wizard: **https://arizo-setup.amirmsr.tech/**
+
+> [!NOTE]
+> The public installer moved to this custom domain after the account's workers.dev routes began returning Cloudflare Error 1101. Use the address above; the previous public workers.dev URL is not currently working. If your own Worker's workers.dev URL has the same problem, a working custom domain or Cloudflare support intervention is required; deploying the code again alone does not fix that routing failure.
 
 1. Press **Create Cloudflare token** (the permissions are pre-selected), then paste the token.
 2. Press **Install on my account**.

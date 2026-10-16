@@ -35,8 +35,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build single-file worker
-        run: node scripts/build.mjs
+      - name: Build and smoke-test wizard
+        run: npm test
 
       - name: Syntax check
         run: |

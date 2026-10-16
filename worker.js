@@ -1317,22 +1317,11 @@ function parseWorkersDevHost(hostname) {
   return null;
 }
 
-// Proves the caller controls the Cloudflare account that SERVES this request.
-// The check is anchored to the workers.dev subdomain in the request URL, which is
-// unique per account, so an attacker cannot pass it by creating a same-named
-// Worker in their own account.
+// Anchor ownership to Cloudflare's routing records for the requested hostname,
+// never just to a script name supplied by a caller. Custom Domains keep setup
+// usable when an account's workers.dev routes fail before the Worker can run.
 async function proveCloudflareOwner(cfToken, url) {
   const host = parseWorkersDevHost(url.hostname);
-  if (!host) {
-    return {
-      error: fail(
-        400,
-        "این آدرس workers.dev نیست؛ برای دامنهٔ اختصاصی از SETUP_KEY استفاده کنید.",
-        "This is not a workers.dev address; use SETUP_KEY for custom domains.",
-        "custom_domain"
-      ),
-    };
-  }
   const accounts = await cfFetch(cfToken, "/accounts?per_page=50");
   if (!accounts.ok) {
     return {
@@ -1344,11 +1333,23 @@ async function proveCloudflareOwner(cfToken, url) {
       ),
     };
   }
-  for (const acc of accounts.data.result || []) {
-    const sub = await cfFetch(cfToken, `/accounts/${acc.id}/workers/subdomain`);
-    if (!sub.ok || !sub.data.result || sub.data.result.subdomain !== host.subdomain) continue;
-    const script = await cfFetch(cfToken, `/accounts/${acc.id}/workers/scripts/${host.script}/settings`);
-    if (script.ok) return { accountId: acc.id, script: host.script };
+  for (const acc of (accounts.data.result || []).slice(0, 8)) {
+    let scriptName;
+    if (host) {
+      const sub = await cfFetch(cfToken, `/accounts/${acc.id}/workers/subdomain`);
+      if (!sub.ok || !sub.data.result || sub.data.result.subdomain !== host.subdomain) continue;
+      scriptName = host.script;
+    } else {
+      const domains = await cfFetch(cfToken, `/accounts/${acc.id}/workers/domains?per_page=100`);
+      if (!domains.ok) continue;
+      const route = (domains.data.result || []).find(
+        (d) => String(d.hostname || "").toLowerCase() === url.hostname.toLowerCase() && d.environment === "production"
+      );
+      if (!route || !WORKER_NAME_RE.test(route.service || "")) continue;
+      scriptName = route.service;
+    }
+    const script = await cfFetch(cfToken, `/accounts/${acc.id}/workers/scripts/${scriptName}/settings`);
+    if (script.ok) return { accountId: acc.id, script: scriptName };
   }
   return {
     error: fail(
@@ -2029,7 +2030,7 @@ async function handleSetupApi(request, env, url) {
       configured: await isConfigured(env),
       hasDb: !!env.DB,
       hasKey: !!(env.SETUP_KEY && String(env.SETUP_KEY).length >= 24),
-      canUseToken: !!host,
+      canUseToken: true,
       script: host ? host.script : null,
       installer: installerEnabled(env),
       version: APP_VERSION,

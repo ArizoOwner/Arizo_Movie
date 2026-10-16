@@ -24,7 +24,7 @@ Only the latest release running on the `main` branch receives security updates.
 3. **Setup Wizard Protection**:
    - The setup wizard API requires `SETUP_KEY` (checked via SHA-256 digests so neither length nor content leaks through timing), only accepts same-origin JSON requests, and refuses all requests while `SETUP_KEY` is unset or shorter than 24 characters.
 
-   - A Cloudflare token is accepted as proof only if it can read the account that owns the workers.dev subdomain in the request URL, so creating a same-named Worker in another account does not pass the check.
+   - A Cloudflare token is accepted as proof only if Cloudflare's API confirms that the account owns the requested workers.dev subdomain or the exact Custom Domain hostname and its production Worker. Creating a same-named Worker in another account does not pass the check.
 
 4. **Hosted Installer (public instance only)**:
    - Enabled only when the Worker is deployed with `PUBLIC_INSTALLER=true`; every other copy answers `installer_off`.
