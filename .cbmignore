@@ -1,0 +1,12 @@
+# Keep generated files, nested worktrees and local configuration out of the code graph.
+.claude/
+dist/
+node_modules/
+.wrangler/
+__pycache__/
+wrangler.public.toml
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.log
