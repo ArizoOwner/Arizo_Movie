@@ -14,11 +14,11 @@
 
 <br>
 
-<a href="https://arizo-setup.amirmsr.tech/">
+<a href="https://arizo-owner.arizosupport.workers.dev/">
   <img src="assets/button.fa.svg" alt="باز کردن ویزارد راه‌اندازی" width="340">
 </a>
 
-<sub>https://arizo-setup.amirmsr.tech/</sub>
+<sub>https://arizo-owner.arizosupport.workers.dev/</sub>
 
 <br>
 
@@ -69,10 +69,10 @@
 
 ### ۱ &nbsp; بگذارید ویزارد ربات را در Cloudflare **خودتان** بسازد
 
-ویزارد همگانی را باز کنید: **https://arizo-setup.amirmsr.tech/**
+ویزارد همگانی را باز کنید: **https://arizo-owner.arizosupport.workers.dev/**
 
 > [!NOTE]
-> بعد از بروز خطای ۱۱۰۱ Cloudflare در مسیرهای workers.dev این اکانت، نصب‌کنندهٔ همگانی به این دامنهٔ اختصاصی منتقل شد. از آدرس بالا استفاده کنید؛ آدرس عمومی قبلی workers.dev فعلاً کار نمی‌کند. اگر آدرس workers.dev ربات خودتان هم همین مشکل را دارد، باید دامنهٔ اختصاصی سالم به آن وصل شود یا Cloudflare مشکل مسیریابی را برطرف کند؛ صرفاً دیپلوی دوبارهٔ کد این خطا را رفع نمی‌کند.
+> ویزارد همگانی روی آدرس مخصوص پروژه در workers.dev اجرا می‌شود و از دامنه‌های شخصی نگهدارنده استفاده نمی‌کند. اگر اکانت خودتان حتی با یک Worker ساده خطای ۱۱۰۱ می‌دهد، مشکل مسیریابی workers.dev آن اکانت را از Cloudflare پیگیری کنید.
 
 ۱. روی **ساخت توکن Cloudflare** بزنید (دسترسی‌ها از قبل انتخاب شده‌اند) و توکن را بچسبانید.
 ۲. روی **نصب روی اکانت من** بزنید.
